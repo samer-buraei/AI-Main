@@ -3,314 +3,260 @@ setlocal enabledelayedexpansion
 title Vibecoding Project Manager - Launcher
 color 0A
 
-REM CRITICAL: Ensure window NEVER closes unexpectedly
-if "%1" NEQ "wrapped" (
-    cmd /k ""%~f0" wrapped"
-    exit /b
-)
+REM Setup error logging
+set "LOGFILE=%~dp0launcher-debug.log"
+echo ======================================== > "%LOGFILE%"
+echo Vibecoding Launcher Debug Log >> "%LOGFILE%"
+echo Started: %DATE% %TIME% >> "%LOGFILE%"
+echo ======================================== >> "%LOGFILE%"
+echo. >> "%LOGFILE%"
 
-REM Clear screen for better visibility
 cls
-
 echo ========================================
 echo   Vibecoding Project Manager Launcher
 echo ========================================
 echo.
 echo Initializing launcher...
-echo Please wait, checking system requirements...
+echo Debug log: %LOGFILE%
 echo.
-timeout /t 3 /nobreak >nul
 
 REM ========================================
-REM  NODE.JS DETECTION AND VALIDATION
+REM  NODE.JS DETECTION
 REM ========================================
 echo [1/6] Checking Node.js installation...
-set NODE_FOUND=0
-set NODE_PATH=
-set NODE_VERSION=
+echo [LOG] [1/6] Starting Node.js detection >> "%LOGFILE%"
 
-REM First, check if node is in PATH
 where node >nul 2>nul
-if !ERRORLEVEL! EQU 0 (
-    set NODE_FOUND=1
-    for /f "tokens=*" %%i in ('where node') do set NODE_PATH=%%i
-    echo [OK] Node.js found in PATH: !NODE_PATH!
-) else (
-    echo [WARNING] Node.js not in PATH, scanning common installation locations...
-    
-    REM Store environment variables FIRST to avoid expansion issues
-    set "PF64=!ProgramFiles!"
-    set "PF32=!ProgramFiles(x86)!"
-    set "APPDATA_LOCAL=!LOCALAPPDATA!"
-    set "APPDATA_ROAMING=!APPDATA!"
-    
-    REM Check Program Files (64-bit)
-    if exist "!PF64!\nodejs\node.exe" (
-        set "PATH=!PF64!\nodejs;!PATH!"
-        set "NODE_PATH=!PF64!\nodejs\node.exe"
-        set NODE_FOUND=1
-        echo [OK] Found Node.js at: !PF64!\nodejs
-    )
-    
-    REM Check Program Files (32-bit)
-    if !NODE_FOUND! EQU 0 (
-        if exist "!PF32!\nodejs\node.exe" (
-            set "PATH=!PF32!\nodejs;!PATH!"
-            set "NODE_PATH=!PF32!\nodejs\node.exe"
-            set NODE_FOUND=1
-            echo [OK] Found Node.js at: !PF32!\nodejs
-        )
-    )
-    
-    REM Check Local AppData
-    if !NODE_FOUND! EQU 0 (
-        if exist "!APPDATA_LOCAL!\Programs\nodejs\node.exe" (
-            set "PATH=!APPDATA_LOCAL!\Programs\nodejs;!PATH!"
-            set "NODE_PATH=!APPDATA_LOCAL!\Programs\nodejs\node.exe"
-            set NODE_FOUND=1
-            echo [OK] Found Node.js at: !APPDATA_LOCAL!\Programs\nodejs
-        )
-    )
-    
-    REM Check AppData npm
-    if !NODE_FOUND! EQU 0 (
-        if exist "!APPDATA_ROAMING!\npm\node.exe" (
-            set "PATH=!APPDATA_ROAMING!\npm;!PATH!"
-            set "NODE_PATH=!APPDATA_ROAMING!\npm\node.exe"
-            set NODE_FOUND=1
-            echo [OK] Found Node.js at: !APPDATA_ROAMING!\npm
-        )
-    )
-)
-
-REM Verify Node.js is accessible and get version
-if !NODE_FOUND! EQU 1 (
-    node --version >nul 2>nul
-    if !ERRORLEVEL! EQU 0 (
-        for /f "tokens=*" %%v in ('node --version 2^>nul') do set NODE_VERSION=%%v
-        if defined NODE_VERSION (
-            echo [OK] Node.js version: !NODE_VERSION!
-        ) else (
-            echo [WARNING] Could not determine Node.js version
-        )
-    ) else (
-        set NODE_FOUND=0
-    )
-)
-
-REM If Node.js still not found, show comprehensive error
-if !NODE_FOUND! EQU 0 (
+if errorlevel 1 (
+    echo [LOG] Node not in PATH >> "%LOGFILE%"
     color 0C
     echo.
-    echo ========================================
-    echo   [ERROR] Node.js Not Found
-    echo ========================================
+    echo [ERROR] Node.js Not Found
     echo.
-    echo Node.js is required but could not be found on your system.
+    echo Node.js is required but not found in PATH.
+    echo Download from: https://nodejs.org/
     echo.
-    echo DOWNLOAD NODE.JS:
-    echo   https://nodejs.org/
+    echo After installation, restart your computer.
     echo.
-    echo After installation:
-    echo   1. Make sure "Add to PATH" is checked
-    echo   2. Restart your computer
-    echo   3. Run this script again
-    echo.
-    echo ========================================
-    echo.
-    echo Window will stay open - press any key when ready to exit
-    pause >nul
+    pause
     exit /b 1
 )
 
+echo [OK] Node.js found
+echo [LOG] Node.js found in PATH >> "%LOGFILE%"
+
+for /f "tokens=*" %%v in ('node --version 2^>nul') do set NODE_VERSION=%%v
+if defined NODE_VERSION (
+    echo [OK] Node.js version: %NODE_VERSION%
+    echo [LOG] NODE_VERSION: %NODE_VERSION% >> "%LOGFILE%"
+)
+
 echo.
-timeout /t 2 /nobreak >nul
 
 REM ========================================
-REM  NPM DETECTION AND VALIDATION
+REM  NPM DETECTION
 REM ========================================
 echo [2/6] Checking npm installation...
-set NPM_FOUND=0
+echo [LOG] [2/6] Starting npm detection >> "%LOGFILE%"
 
 where npm >nul 2>nul
-if !ERRORLEVEL! EQU 0 (
-    npm --version >nul 2>nul
-    if !ERRORLEVEL! EQU 0 (
-        set NPM_FOUND=1
-        for /f "tokens=*" %%v in ('npm --version 2^>nul') do (
-            echo [OK] npm found, version: %%v
-        )
-    )
-)
-
-if !NPM_FOUND! EQU 0 (
+if errorlevel 1 (
+    echo [LOG] npm not found >> "%LOGFILE%"
     color 0C
     echo.
-    echo ========================================
-    echo   [ERROR] npm Not Found
-    echo ========================================
+    echo [ERROR] npm Not Found
     echo.
-    echo npm should be installed with Node.js
+    echo npm should be installed with Node.js.
     echo Please reinstall Node.js from: https://nodejs.org/
     echo.
-    echo ========================================
-    echo.
-    echo Window will stay open - press any key when ready to exit
-    pause >nul
+    pause
     exit /b 1
 )
 
+echo [OK] npm found
+echo [LOG] npm found in PATH >> "%LOGFILE%"
+
+for /f "tokens=*" %%v in ('npm --version 2^>nul') do set NPM_VERSION=%%v
+if defined NPM_VERSION (
+    echo [OK] npm version: %NPM_VERSION%
+    echo [LOG] NPM_VERSION: %NPM_VERSION% >> "%LOGFILE%"
+)
+
 echo.
-timeout /t 1 /nobreak >nul
 
 REM ========================================
 REM  PROJECT DIRECTORY VALIDATION
 REM ========================================
 echo [3/6] Checking project directories...
+echo [LOG] [3/6] Checking project directories >> "%LOGFILE%"
+echo [LOG] Current directory: %CD% >> "%LOGFILE%"
+
 set MISSING_DIRS=0
 
 if not exist "vibecoding-backend" (
     echo [ERROR] Missing: vibecoding-backend
+    echo [LOG] Missing: vibecoding-backend >> "%LOGFILE%"
     set /a MISSING_DIRS+=1
+) else (
+    echo [LOG] Found: vibecoding-backend >> "%LOGFILE%"
 )
 
 if not exist "vibecoding-dashboard" (
     echo [ERROR] Missing: vibecoding-dashboard
+    echo [LOG] Missing: vibecoding-dashboard >> "%LOGFILE%"
     set /a MISSING_DIRS+=1
+) else (
+    echo [LOG] Found: vibecoding-dashboard >> "%LOGFILE%"
 )
 
 if not exist "vibecoding-mcp-server" (
     echo [ERROR] Missing: vibecoding-mcp-server
+    echo [LOG] Missing: vibecoding-mcp-server >> "%LOGFILE%"
     set /a MISSING_DIRS+=1
+) else (
+    echo [LOG] Found: vibecoding-mcp-server >> "%LOGFILE%"
 )
 
-if !MISSING_DIRS! GTR 0 (
+if %MISSING_DIRS% GTR 0 (
+    echo [LOG] ERROR: Missing directories >> "%LOGFILE%"
     color 0C
     echo.
-    echo ========================================
-    echo   [ERROR] Missing Project Directories
-    echo ========================================
+    echo [ERROR] Missing Project Directories
     echo.
-    echo Make sure you run this script from the project root directory
+    echo Run this script from the project root directory.
+    echo Current directory: %CD%
     echo.
-    echo Current directory: !CD!
-    echo.
-    echo ========================================
-    echo.
-    echo Window will stay open - press any key when ready to exit
-    pause >nul
+    pause
     exit /b 1
 )
 
 echo [OK] All project directories found
+echo [LOG] All directories found >> "%LOGFILE%"
 echo.
-timeout /t 1 /nobreak >nul
 
 REM ========================================
 REM  DEPENDENCY INSTALLATION
 REM ========================================
 echo [4/6] Checking and installing dependencies...
+echo [LOG] [4/6] Checking dependencies >> "%LOGFILE%"
 
 REM Backend dependencies
 if not exist "vibecoding-backend\node_modules" (
+    echo.
+    echo ========================================
     echo [INFO] Installing backend dependencies...
+    echo ========================================
+    echo This may take 1-3 minutes depending on your internet speed.
+    echo Progress will be shown below...
+    echo.
+    echo [LOG] Installing backend dependencies >> "%LOGFILE%"
     cd vibecoding-backend
-    call npm install
-    if !ERRORLEVEL! NEQ 0 (
+    
+    REM Show npm progress with timestamps
+    echo [%TIME%] Starting npm install for backend...
+    call npm install --loglevel=info
+    
+    if errorlevel 1 (
+        echo [LOG] ERROR: Backend npm install failed >> "%LOGFILE%"
         color 0C
+        echo.
         echo [ERROR] Backend dependency installation failed!
         cd ..
         echo.
-        echo Window will stay open - press any key when ready to exit
-        pause >nul
+        echo Check debug log: %LOGFILE%
+        pause
         exit /b 1
     )
+    echo [%TIME%] Completed!
     echo [OK] Backend dependencies installed
+    echo.
     cd ..
 ) else (
     echo [OK] Backend dependencies already installed
+    echo [LOG] Backend dependencies already exist >> "%LOGFILE%"
 )
 
 REM Frontend dependencies
 if not exist "vibecoding-dashboard\node_modules" (
+    echo.
+    echo ========================================
     echo [INFO] Installing frontend dependencies...
+    echo ========================================
+    echo React apps have many dependencies - this may take 2-4 minutes.
+    echo Progress will be shown below...
+    echo.
+    echo [LOG] Installing frontend dependencies >> "%LOGFILE%"
     cd vibecoding-dashboard
-    call npm install
-    if !ERRORLEVEL! NEQ 0 (
+    
+    REM Show npm progress with timestamps
+    echo [%TIME%] Starting npm install for frontend...
+    call npm install --loglevel=info
+    
+    if errorlevel 1 (
+        echo [LOG] ERROR: Frontend npm install failed >> "%LOGFILE%"
         color 0C
+        echo.
         echo [ERROR] Frontend dependency installation failed!
         cd ..
         echo.
-        echo Window will stay open - press any key when ready to exit
-        pause >nul
+        echo Check debug log: %LOGFILE%
+        pause
         exit /b 1
     )
+    echo [%TIME%] Completed!
     echo [OK] Frontend dependencies installed
+    echo.
     cd ..
 ) else (
     echo [OK] Frontend dependencies already installed
+    echo [LOG] Frontend dependencies already exist >> "%LOGFILE%"
 )
 
 REM MCP Server dependencies
 if not exist "vibecoding-mcp-server\node_modules" (
+    echo.
+    echo ========================================
     echo [INFO] Installing MCP server dependencies...
+    echo ========================================
+    echo Final installation step - this may take 1-2 minutes.
+    echo Progress will be shown below...
+    echo.
+    echo [LOG] Installing MCP server dependencies >> "%LOGFILE%"
     cd vibecoding-mcp-server
-    call npm install
-    if !ERRORLEVEL! NEQ 0 (
+    
+    REM Show npm progress with timestamps
+    echo [%TIME%] Starting npm install for MCP server...
+    call npm install --loglevel=info
+    
+    if errorlevel 1 (
+        echo [LOG] ERROR: MCP npm install failed >> "%LOGFILE%"
         color 0C
+        echo.
         echo [ERROR] MCP server dependency installation failed!
         cd ..
         echo.
-        echo Window will stay open - press any key when ready to exit
-        pause >nul
+        echo Check debug log: %LOGFILE%
+        pause
         exit /b 1
     )
+    echo [%TIME%] Completed!
     echo [OK] MCP server dependencies installed
+    echo.
     cd ..
 ) else (
     echo [OK] MCP server dependencies already installed
+    echo [LOG] MCP server dependencies already exist >> "%LOGFILE%"
 )
 
 echo [OK] All dependencies ready
+echo [LOG] All dependencies ready >> "%LOGFILE%"
 echo.
-timeout /t 1 /nobreak >nul
-
-REM ========================================
-REM  PORT AVAILABILITY CHECK
-REM ========================================
-echo [5/6] Checking port availability...
-
-REM Check port 4000 (Backend)
-netstat -an | findstr ":4000" >nul 2>nul
-if !ERRORLEVEL! EQU 0 (
-    echo [WARNING] Port 4000 is already in use (Backend API)
-) else (
-    echo [OK] Port 4000 available (Backend API)
-)
-
-REM Check port 3000 (Frontend)
-netstat -an | findstr ":3000" >nul 2>nul
-if !ERRORLEVEL! EQU 0 (
-    echo [WARNING] Port 3000 is already in use (Frontend)
-) else (
-    echo [OK] Port 3000 available (Frontend)
-)
-
-REM Check port 4001 (MCP Server)
-netstat -an | findstr ":4001" >nul 2>nul
-if !ERRORLEVEL! EQU 0 (
-    echo [WARNING] Port 4001 is already in use (MCP Server)
-) else (
-    echo [OK] Port 4001 available (MCP Server)
-)
-
-echo.
-timeout /t 1 /nobreak >nul
 
 REM ========================================
 REM  CREATE HELPER SCRIPTS FOR SERVICES
 REM ========================================
-echo [6/6] Creating service launchers...
+echo [5/6] Creating service launchers...
+echo [LOG] [5/6] Creating helper scripts >> "%LOGFILE%"
 
 REM Create Backend launcher
 (
@@ -324,13 +270,14 @@ REM Create Backend launcher
     echo echo Starting on port 4000...
     echo echo.
     echo npm run dev
-    echo if %%ERRORLEVEL%% NEQ 0 ^(
-    echo   echo.
-    echo   echo [ERROR] Backend failed to start!
-    echo   echo.
-    echo   pause
+    echo if errorlevel 1 ^(
+    echo     echo.
+    echo     echo [ERROR] Backend failed to start!
+    echo     echo.
+    echo     pause
     echo ^)
 ) > start-backend-service.bat
+echo [LOG] Created start-backend-service.bat >> "%LOGFILE%"
 
 REM Create Frontend launcher
 (
@@ -344,13 +291,14 @@ REM Create Frontend launcher
     echo echo Starting on port 3000...
     echo echo.
     echo npm start
-    echo if %%ERRORLEVEL%% NEQ 0 ^(
-    echo   echo.
-    echo   echo [ERROR] Frontend failed to start!
-    echo   echo.
-    echo   pause
+    echo if errorlevel 1 ^(
+    echo     echo.
+    echo     echo [ERROR] Frontend failed to start!
+    echo     echo.
+    echo     pause
     echo ^)
 ) > start-frontend-service.bat
+echo [LOG] Created start-frontend-service.bat >> "%LOGFILE%"
 
 REM Create MCP Server launcher
 (
@@ -364,13 +312,14 @@ REM Create MCP Server launcher
     echo echo Starting on port 4001...
     echo echo.
     echo npm run dev
-    echo if %%ERRORLEVEL%% NEQ 0 ^(
-    echo   echo.
-    echo   echo [ERROR] MCP Server failed to start!
-    echo   echo.
-    echo   pause
+    echo if errorlevel 1 ^(
+    echo     echo.
+    echo     echo [ERROR] MCP Server failed to start!
+    echo     echo.
+    echo     pause
     echo ^)
 ) > start-mcp-service.bat
+echo [LOG] Created start-mcp-service.bat >> "%LOGFILE%"
 
 echo [OK] Service launchers created
 echo.
@@ -378,6 +327,8 @@ echo.
 REM ========================================
 REM  START SERVICES
 REM ========================================
+echo [6/6] Starting services...
+echo.
 echo ========================================
 echo   Starting All Services
 echo ========================================
@@ -391,14 +342,17 @@ echo.
 
 REM Start services using the helper scripts
 echo [INFO] Starting Backend API...
+echo [LOG] Starting backend service >> "%LOGFILE%"
 start "Vibecoding Backend" cmd /k "%~dp0start-backend-service.bat"
 timeout /t 3 /nobreak >nul
 
 echo [INFO] Starting Frontend Dashboard...
+echo [LOG] Starting frontend service >> "%LOGFILE%"
 start "Vibecoding Frontend" cmd /k "%~dp0start-frontend-service.bat"
 timeout /t 2 /nobreak >nul
 
 echo [INFO] Starting MCP Server...
+echo [LOG] Starting MCP service >> "%LOGFILE%"
 start "Vibecoding MCP Server" cmd /k "%~dp0start-mcp-service.bat"
 timeout /t 2 /nobreak >nul
 
@@ -415,8 +369,12 @@ echo To stop services: Close their respective windows
 echo.
 echo ========================================
 echo.
-echo This window will stay open until you close it
-echo Press any key to close this launcher window
+echo Debug log saved to: %LOGFILE%
+echo.
+echo This window will stay open until you close it.
+echo Press any key to close this launcher window.
 echo (Services will continue running)
 echo ========================================
-pause >nul
+echo [LOG] Script completed successfully >> "%LOGFILE%"
+echo [LOG] End time: %DATE% %TIME% >> "%LOGFILE%"
+pause

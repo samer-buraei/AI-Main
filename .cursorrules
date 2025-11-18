@@ -1,0 +1,594 @@
+# Cursor AI Coding Rules - Global Best Practices
+# ===============================================
+# These rules apply to all projects in this workspace and serve as guidelines
+# for AI-assisted development to ensure robust, maintainable, and user-friendly code.
+
+## GENERAL PRINCIPLES
+## ==================
+
+### 1. PROGRESS VISIBILITY
+- **ALWAYS** show progress indicators for long-running operations (>5 seconds)
+- Display timestamps at start and end of operations
+- Show estimated time or iteration counts when possible
+- Use progress bars, spinners, or status updates
+- For npm/package installations: use verbose flags (--loglevel=info)
+- **Live log tailing:** For long operations, implement real-time log monitoring where applicable
+- Show package counts, download progress, or iteration numbers as they happen
+- Never leave users wondering if the process is stuck or working
+- For operations >1 minute, show "heartbeat" indicators (dots, timestamps, or counters)
+
+### 2. ERROR HANDLING
+- **MANDATORY** comprehensive error handling for ALL operations
+- Provide clear, actionable error messages (not just "Error occurred")
+- Include specific troubleshooting steps for common errors
+- Log errors to files with timestamps for debugging
+- Use color coding: Red (0C) for errors, Yellow (0E) for warnings, Green (0A) for success
+- Never fail silently - always inform the user what went wrong
+
+### 3. USER COMMUNICATION
+- Explain what's happening at each step
+- Set expectations (e.g., "This may take 2-3 minutes")
+- Show what was found/verified before proceeding
+- Confirm successful completion of operations
+- Keep windows open on errors so users can read messages
+- Provide debug log file paths in error messages
+
+## BATCH SCRIPTING (.bat/.cmd files)
+## ==================================
+
+### Variable Expansion Rules
+```batch
+# ALWAYS use delayed expansion for variables modified in loops/if blocks
+setlocal enabledelayedexpansion
+
+# Within if blocks or for loops: use !VAR!
+if condition (
+    set VAR=value
+    echo !VAR!      # CORRECT - delayed expansion
+    echo %VAR%      # WRONG - will show old value
+)
+
+# Outside if blocks: use %VAR%
+set VAR=value
+echo %VAR%          # CORRECT
+
+# Environment variables in if blocks: store first, then use
+set "PF64=%ProgramFiles%"
+if condition (
+    echo !PF64!     # CORRECT
+    echo %ProgramFiles%  # WRONG - expansion issues
+)
+```
+
+### Path Handling with Spaces
+```batch
+# ALWAYS quote paths that may contain spaces
+cd /d "%~dp0"                       # Script's directory
+cd "C:\Users\WIN 10\Desktop\Folder" # Paths with spaces
+
+# Double-quote for start commands
+start "Title" cmd /k ""%~dp0script.bat""
+
+# Use pushd/popd for safe directory changes
+pushd "directory with spaces"
+    # Do work here
+popd
+
+# Quote all file operations
+if exist "path with spaces\file.txt" (...)
+copy "source path" "dest path"
+```
+
+### Error Level Checking
+```batch
+# IMMEDIATE checking (preferred for simple cases)
+command
+if errorlevel 1 (
+    echo Command failed
+    exit /b 1
+)
+
+# Store errorlevel if needed later
+command
+set ERR=%ERRORLEVEL%
+if %ERR% NEQ 0 (...)
+
+# Within delayed expansion blocks
+command
+if !ERRORLEVEL! NEQ 0 (...)
+```
+
+### Script Structure Template
+```batch
+@echo off
+setlocal enabledelayedexpansion
+title Script Name
+color 0A
+
+REM Setup logging
+set "LOGFILE=%~dp0debug.log"
+echo ======== Script Started: %DATE% %TIME% ======== > "%LOGFILE%"
+
+REM Main script logic with progress indicators
+echo [1/4] Checking dependencies...
+echo [LOG] Checking dependencies >> "%LOGFILE%"
+# ... operations ...
+
+REM Error handling
+if errorlevel 1 (
+    color 0C
+    echo.
+    echo [ERROR] Specific error description
+    echo.
+    echo Troubleshooting steps:
+    echo   1. Step one
+    echo   2. Step two
+    echo.
+    echo Debug log: %LOGFILE%
+    pause
+    exit /b 1
+)
+
+echo.
+echo [OK] All operations completed successfully
+pause
+```
+
+### Helper Script Generation
+```batch
+# Use parenthesized blocks for multi-line file creation
+(
+    echo @echo off
+    echo title Helper Script
+    echo cd /d "%%~dp0subdirectory"
+    echo echo Starting service...
+    echo npm run dev
+    echo if errorlevel 1 ^(
+    echo     echo Service failed to start
+    echo     pause
+    echo ^)
+) > helper-script.bat
+
+# Note: Escape parentheses with ^ inside echo statements
+# Note: Use %% for variables that should be evaluated when helper runs
+```
+
+## NODE.JS / NPM PROJECTS
+## =======================
+
+### Dependency Management & Deprecation Warnings
+
+**Problem:** npm install shows many deprecation warnings
+
+**Understanding Deprecations:**
+- **Direct dependencies:** You control these (in package.json)
+- **Transitive dependencies:** Dependencies of your dependencies (you don't control)
+- **Most warnings are harmless:** Old packages that still work fine
+
+**Categorize Warnings:**
+1. **Ignore (Harmless):**
+   - `glob@7.x`, `rimraf@3.x` - Old but stable
+   - `inflight` - Memory leak is minimal for CLI tools
+   - Babel proposal plugins - From React's tooling
+   
+2. **Fix When Time Permits:**
+   - Security tools (`eslint`, `webpack`)
+   - Abandoned packages with alternatives
+   
+3. **Can't Fix:**
+   - Transitive dependencies (wait for upstream updates)
+
+**Best Practices:**
+
+```batch
+# 1. Create .npmrc in project root to suppress noise
+loglevel=error
+fund=false
+audit=false
+legacy-peer-deps=true
+
+# 2. Run audits separately (not during install)
+npm audit --audit-level=moderate
+
+# 3. Check for outdated packages
+npm outdated
+
+# 4. Update safely (only minor/patch versions)
+npm update
+
+# 5. For major updates, test each one
+npm install package@latest
+```
+
+**Tools:**
+- `check-dependencies.bat` - Audit all projects
+- `update-dependencies.bat` - Safe update workflow
+- `.npmrc` - Suppress warnings during install
+
+**When to Act:**
+- ✅ Security vulnerabilities (npm audit)
+- ✅ Abandoned packages affecting features
+- ❌ Cosmetic deprecation warnings
+- ❌ Transitive dependency warnings
+
+### Common Windows Filesystem Errors
+**Problem:** `npm warn tar TAR_ENTRY_ERROR ENOENT` errors during installation
+
+**Causes:**
+1. Windows 260-character path limit (MAX_PATH)
+2. File locking by antivirus/search indexing
+3. Corrupted npm cache
+4. Partial previous installations
+
+**Solutions:**
+```batch
+# Option 1: Clean reinstall
+npm cache clean --force
+rd /s /q node_modules
+del package-lock.json
+npm install --legacy-peer-deps
+
+# Option 2: Use Docker (RECOMMENDED)
+# Avoids all Windows filesystem issues completely
+docker-compose up --build
+```
+
+**Prevention:**
+- Use Docker for development (isolates from Windows filesystem)
+- Enable Long Path Support in Windows 10/11
+- Exclude project folders from antivirus real-time scanning
+- Use `npm ci` instead of `npm install` for cleaner installs
+
+### Installation Progress
+```batch
+# Show progress with timestamps and verbose output
+echo ========================================
+echo Installing dependencies...
+echo ========================================
+echo This may take 1-3 minutes.
+echo Progress will be shown below...
+echo.
+echo [%TIME%] Starting npm install...
+call npm install --loglevel=info
+if errorlevel 1 (
+    echo [ERROR] Installation failed
+    pause
+    exit /b 1
+)
+echo [%TIME%] Completed!
+```
+
+### Live Progress Monitoring (Advanced)
+```batch
+# For very long operations, show live package counts
+echo [%TIME%] Starting installation...
+echo Monitoring progress - package counts will update below...
+echo.
+
+REM Start npm install in background, redirect to temp file
+start /b cmd /c "npm install --loglevel=info > npm-install.log 2>&1"
+
+REM Monitor progress in real-time
+:monitor_loop
+timeout /t 3 /nobreak >nul
+findstr /c:"added" npm-install.log | find /c "added" > count.txt
+set /p PKG_COUNT=<count.txt
+if defined PKG_COUNT echo [%TIME%] Packages installed: %PKG_COUNT%
+tasklist | findstr /i "npm" >nul
+if %ERRORLEVEL% EQU 0 goto monitor_loop
+
+echo [%TIME%] Installation complete!
+del count.txt npm-install.log
+```
+
+### Environment Detection
+```batch
+# Check if Node.js is in PATH
+where node >nul 2>nul
+if errorlevel 1 (
+    echo [ERROR] Node.js not found in PATH
+    echo Download from: https://nodejs.org/
+    pause
+    exit /b 1
+)
+
+# Get version
+for /f "tokens=*" %%v in ('node --version 2^>nul') do set NODE_VERSION=%%v
+echo [OK] Node.js version: %NODE_VERSION%
+
+# Check directories exist
+if not exist "project-folder" (
+    echo [ERROR] project-folder not found
+    echo Current directory: %CD%
+    pause
+    exit /b 1
+)
+```
+
+### Service Launchers
+```batch
+# Create separate windows for services
+start "Service Name" cmd /k ""%~dp0service-script.bat""
+timeout /t 2 /nobreak >nul
+
+# Keep main launcher open
+echo Services are running in separate windows.
+echo Close their windows to stop them.
+echo.
+echo Press any key to close this launcher...
+pause >nul
+```
+
+## DOCKER SETUP
+## =============
+
+### When to Recommend Docker
+- ✅ Long npm install times (>5 minutes)
+- ✅ Windows filesystem errors (TAR_ENTRY_ERROR, ENOENT)
+- ✅ Path length issues (260 character limit)
+- ✅ "Works on my machine" problems
+- ✅ Multiple Node.js versions needed
+- ✅ Production-like environment needed
+
+### Docker-Compose Template
+```yaml
+version: '3.8'
+services:
+  app:
+    build: .
+    ports:
+      - "3000:3000"
+    volumes:
+      - .:/app
+      - node_modules:/app/node_modules  # Named volume for node_modules
+    command: npm run dev
+    restart: unless-stopped
+
+volumes:
+  node_modules:  # Keeps node_modules in Docker, not Windows filesystem
+```
+
+### Benefits of Named Volumes for node_modules
+- ✅ Avoids Windows path length limits
+- ✅ Faster file operations (Linux filesystem in Docker)
+- ✅ No antivirus interference
+- ✅ Survives container rebuilds
+- ✅ Clean host filesystem
+
+### Docker Launcher Template (Comprehensive)
+```batch
+@echo off
+setlocal enabledelayedexpansion
+
+# 1. Check Docker daemon
+docker info >nul 2>nul
+if errorlevel 1 (
+    echo [ERROR] Docker not running
+    pause
+    exit /b 1
+)
+
+# 2. Check memory allocation
+for /f "tokens=*" %%m in ('docker info --format "{{.MemTotal}}"') do set DOCKER_MEM=%%m
+echo [INFO] Docker memory: %DOCKER_MEM% bytes
+
+# 3. Check port availability
+netstat -an | findstr ":3000" | findstr "LISTENING" >nul 2>nul
+if !ERRORLEVEL! EQU 0 (
+    echo [WARNING] Port 3000 in use, stopping containers...
+    docker-compose down
+)
+
+# 4. Verify file access
+if not exist "%CD%\docker-compose.yml" (
+    echo [ERROR] Enable file sharing in Docker Desktop
+    pause
+    exit /b 1
+)
+
+# 5. Start services
+docker-compose up -d --build
+
+# 6. Verify network connectivity
+timeout /t 10 /nobreak >nul
+curl -s http://localhost:4000 >nul 2>nul
+if !ERRORLEVEL! EQU 0 (
+    echo [OK] Services accessible
+    start http://localhost:3000
+) else (
+    echo [INFO] Services starting, check logs
+)
+```
+
+## POWERSHELL SCRIPTS
+## ===================
+
+### GUI Applications
+```powershell
+Add-Type -AssemblyName System.Windows.Forms
+Add-Type -AssemblyName System.Drawing
+
+# Create form with proper size and position
+$form = New-Object System.Windows.Forms.Form
+$form.Text = "Application Title"
+$form.Size = New-Object System.Drawing.Size(500, 400)
+$form.StartPosition = "CenterScreen"
+$form.FormBorderStyle = "FixedDialog"
+$form.MaximizeBox = $false
+
+# Show progress to user
+$form.Hide()
+Write-Host "Processing..." -ForegroundColor Cyan
+# ... operations ...
+Write-Host "Complete!" -ForegroundColor Green
+```
+
+### Error Handling
+```powershell
+try {
+    # Operations that might fail
+    $result = Invoke-SomeCommand
+}
+catch {
+    Write-Host "`n[ERROR] Operation failed" -ForegroundColor Red
+    Write-Host "Reason: $($_.Exception.Message)" -ForegroundColor Yellow
+    Write-Host "`nTroubleshooting:" -ForegroundColor Cyan
+    Write-Host "  1. Check prerequisites"
+    Write-Host "  2. Verify permissions"
+    Read-Host "`nPress Enter to exit"
+    exit 1
+}
+```
+
+## TESTING REQUIREMENTS
+## =====================
+
+### Before Delivering Code
+- Test on paths with spaces (e.g., "C:\Users\WIN 10\Desktop\AI Main")
+- Test with and without admin privileges
+- Test all error paths (missing dependencies, wrong directory, etc.)
+- Test with both fresh installs and existing installations
+- Verify windows stay open on errors
+- Confirm all paths are quoted correctly
+- Verify progress is visible for long operations
+- Test for Windows filesystem errors (long paths, file locking)
+- Provide Docker alternative when applicable
+
+### Command Line Limits
+- Windows batch commands: 8191 character limit
+- Break long commands into helper scripts
+- Use variables to shorten repeated paths
+
+## DOCUMENTATION
+## ==============
+
+### README Requirements
+- Quick start instructions (numbered steps)
+- Prerequisites with download links
+- Common troubleshooting section
+- Debug log file locations
+- Port numbers and URLs for services
+
+### Code Comments
+```batch
+REM ========================================
+REM  SECTION NAME
+REM ========================================
+REM Brief description of what this section does
+REM Known issues or special considerations
+
+# Inline comments for complex operations
+command  REM Why this is needed
+```
+
+## GIT INTEGRATION
+## ================
+
+### Git Operations
+- Never assume Git is in PATH
+- Check common installation locations
+- Provide download link if not found
+- Use embedded credentials in URLs for automated pushes
+- Detect current branch, don't assume 'main' or 'master'
+- Provide specific error messages for auth failures
+
+### .gitignore Essentials
+```gitignore
+# Dependencies
+node_modules/
+*/node_modules/
+
+# Logs
+*.log
+debug.log
+launcher-debug.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+```
+
+## SECURITY CONSIDERATIONS
+## ========================
+
+- Never hardcode credentials in scripts
+- Use environment variables or GUI prompts for sensitive data
+- Clear credentials from memory after use
+- Don't log sensitive information
+- Warn users about Personal Access Token security
+
+## ACCESSIBILITY
+## ==============
+
+- Use clear, non-technical language where possible
+- Provide visual separators (========) for sections
+- Use consistent formatting for messages
+- Include both visual (color) and textual (e.g., [ERROR]) indicators
+- Keep console windows open so messages can be read
+
+## MAINTENANCE
+## ============
+
+- Log all operations with timestamps
+- Create debug logs separate from user-facing output
+- Version scripts and note changes
+- Include contact/support information
+- Provide paths to logs in all error messages
+- For long-running operations, implement log tailing to show live progress
+- Use temporary log files for real-time monitoring of background processes
+
+## ANTI-PATTERNS TO AVOID
+## =======================
+
+❌ Failing silently without user notification
+❌ Closing windows too quickly to read errors
+❌ Assuming paths don't contain spaces
+❌ Using %VAR% inside if blocks with delayed expansion
+❌ Hardcoding installation paths
+❌ Long-running operations without progress indicators
+❌ Generic error messages ("Something went wrong")
+❌ Forgetting to quote paths in start commands
+❌ Not testing error scenarios
+❌ Mixing immediate and delayed expansion incorrectly
+❌ Ignoring Windows filesystem limitations (path length, file locking)
+❌ Not offering Docker alternative for Node.js projects
+❌ Installing node_modules directly on Windows without considering Docker
+
+## PERFORMANCE
+## ============
+
+- Parallel operations where possible (separate windows for services)
+- Skip unnecessary checks if already verified
+- Cache results of expensive operations
+- Use appropriate log levels (info vs verbose vs debug)
+- Clean up temporary files after use
+
+## FINAL CHECKLIST
+## ===============
+
+Before committing or delivering code, verify:
+- [ ] All error paths tested
+- [ ] Progress visible for operations >5 seconds
+- [ ] Live progress monitoring for operations >1 minute
+- [ ] Paths with spaces handled correctly
+- [ ] Windows stay open on errors
+- [ ] Delayed expansion used correctly
+- [ ] All paths quoted
+- [ ] Debug logging implemented
+- [ ] User-friendly error messages
+- [ ] Troubleshooting steps provided
+- [ ] Documentation updated
+- [ ] Color coding used appropriately
+- [ ] Works without admin rights (if applicable)
+- [ ] Log tailing implemented where applicable
+
+---
+
+**Remember:** These rules exist because real users, on real systems, with real paths 
+containing spaces, will use this code. Make it robust, make it visible, and make it helpful.
+
