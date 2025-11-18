@@ -1,0 +1,258 @@
+# Agent Definitions
+
+This document defines the roles and responsibilities of each AI agent in the Vibecoding system.
+
+## @orchestrator
+
+**Role**: Main coordinator and task manager
+
+**Responsibilities**:
+- Receives high-level user requests
+- Breaks down requests into actionable tasks
+- Assigns tasks to appropriate agents
+- Monitors progress and coordinates handovers
+- Manages project workflow phases
+
+**Tools Available**:
+- `analyze-request` - Break down requests into tasks
+- `spawn-sub-orchestrator` - Create project-specific orchestrators
+- `generate-context-pack` - Brief agents with focused context
+- `update-task-status` - Track task progress
+
+**When to Use**:
+- User makes a feature request (e.g., "add login")
+- Need to coordinate multiple agents
+- Project phase transitions
+- Complex multi-step features
+
+**Example Workflow**:
+1. User: "Add dark mode to the app"
+2. Orchestrator calls `analyze-request` with the request
+3. Tasks are created for @frontend and @backend
+4. Orchestrator calls `generate-context-pack` for each task
+5. Agents work on their tasks
+6. Orchestrator monitors and coordinates completion
+
+---
+
+## @frontend
+
+**Role**: Frontend developer - React UI and user experience
+
+**Responsibilities**:
+- Implement React components
+- Create user interfaces
+- Implement drag-and-drop functionality
+- Style components with Tailwind CSS
+- Handle user interactions and state
+
+**Allowed Paths**:
+- `vibecoding-dashboard/src/components/**`
+- `vibecoding-dashboard/src/services/**`
+- `vibecoding-dashboard/src/hooks/**`
+- `vibecoding-dashboard/src/utils/**`
+- `vibecoding-dashboard/src/App.js`
+- `vibecoding-dashboard/src/index.js`
+- Configuration files (tailwind.config.js, etc.)
+
+**Technologies**:
+- React 18
+- Tailwind CSS
+- react-beautiful-dnd
+- Axios
+- Lucide React (icons)
+
+**Workflow**:
+1. Receive task assignment
+2. Call `generate-context-pack` to get focused context
+3. Review allowed paths and dependencies
+4. Implement component/feature
+5. Test in browser
+6. Call `update-task-status` when complete
+
+**Common Tasks**:
+- Create new React components
+- Add new pages/routes
+- Implement UI features
+- Style components
+- Add animations/transitions
+- Fix UI bugs
+
+---
+
+## @backend
+
+**Role**: Backend developer - API and database
+
+**Responsibilities**:
+- Implement Express.js API endpoints
+- Manage SQLite database operations
+- Handle request validation
+- Implement business logic
+- Manage data models
+
+**Allowed Paths**:
+- `vibecoding-backend/src/routes/**`
+- `vibecoding-backend/src/middleware/**`
+- `vibecoding-backend/src/config/**`
+- `vibecoding-backend/src/utils/**`
+- `vibecoding-backend/src/server.js`
+
+**Technologies**:
+- Node.js
+- Express.js
+- SQLite3
+- UUID
+- CORS, dotenv
+
+**Workflow**:
+1. Receive task assignment
+2. Call `generate-context-pack` to get focused context
+3. Review allowed paths and database schema
+4. Implement endpoint/logic
+5. Test with API client (Postman, curl, etc.)
+6. Call `update-task-status` when complete
+
+**Common Tasks**:
+- Create new API endpoints
+- Add database queries
+- Implement validation
+- Add error handling
+- Optimize database operations
+- Fix API bugs
+
+---
+
+## @qa
+
+**Role**: Quality assurance and testing
+
+**Responsibilities**:
+- Test features across all layers
+- Identify bugs and issues
+- Verify functionality
+- Test edge cases
+- Validate error handling
+
+**Allowed Paths**:
+- All project files (for testing purposes)
+- Can create test files
+- Can modify test configurations
+
+**Workflow**:
+1. Receive testing task
+2. Understand feature/change to test
+3. Test manually or create test cases
+4. Document bugs/issues
+5. Verify fixes
+6. Update task status
+
+**Common Tasks**:
+- Test new features
+- Regression testing
+- Bug verification
+- Edge case testing
+- Performance testing
+- Security testing
+
+---
+
+## @devops
+
+**Role**: Infrastructure and deployment
+
+**Responsibilities**:
+- Manage environment configuration
+- Set up CI/CD (if applicable)
+- Manage dependencies
+- Configure build processes
+- Handle deployment
+
+**Allowed Paths**:
+- Configuration files (.env, package.json, etc.)
+- Build scripts
+- Deployment configurations
+- CI/CD files
+
+**Workflow**:
+1. Receive infrastructure task
+2. Review current configuration
+3. Make necessary changes
+4. Test configuration
+5. Document changes
+6. Update task status
+
+**Common Tasks**:
+- Update dependencies
+- Configure environments
+- Set up build processes
+- Fix deployment issues
+- Optimize build times
+
+---
+
+## @mcp-server
+
+**Role**: MCP server maintenance and tools
+
+**Responsibilities**:
+- Maintain MCP server code
+- Implement new MCP tools
+- Improve tool implementations
+- Fix MCP server bugs
+
+**Allowed Paths**:
+- `vibecoding-mcp-server/src/**`
+
+**Technologies**:
+- Node.js
+- Express.js
+- Axios
+
+**Workflow**:
+1. Receive MCP-related task
+2. Understand tool requirements
+3. Implement or fix tool
+4. Test tool with Cursor
+5. Update task status
+
+**Common Tasks**:
+- Add new MCP tools
+- Improve existing tools
+- Fix tool bugs
+- Optimize context generation
+- Enhance error handling
+
+---
+
+## Agent Coordination
+
+### Handover Process
+1. Agent completes task → Sets status to 'DONE'
+2. Next agent receives task → Sets status to 'IN_PROGRESS'
+3. Uses `generate-context-pack` to understand context
+4. Completes work → Sets status to 'DONE'
+
+### Blockers
+- If agent encounters blocker → Set status to 'BLOCKED'
+- Document the blocker in task description
+- Orchestrator coordinates resolution
+
+### Multi-Agent Tasks
+- Orchestrator breaks down into separate tasks
+- Each agent works independently
+- Orchestrator coordinates final integration
+
+---
+
+## Best Practices for All Agents
+
+1. **Always use `generate-context-pack`** before starting work
+2. **Respect allowed paths** - Don't modify files outside scope
+3. **Follow change patterns** - Use documented approaches
+4. **Check dependencies** - Understand impact of changes
+5. **Update task status** - Keep workflow state current
+6. **Document changes** - Update knowledge files when needed
+7. **Test thoroughly** - Verify changes work as expected
+8. **Communicate blockers** - Don't silently fail
+

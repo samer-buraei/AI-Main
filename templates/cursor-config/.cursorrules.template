@@ -1,0 +1,163 @@
+# Cursor Rules for Vibecoding Project Manager
+
+This file defines rules and guidelines for AI agents working on this project.
+
+## Project Context
+
+This is a multi-project management system with three layers:
+1. **Backend API** (Express + SQLite) - Data layer
+2. **Frontend Dashboard** (React + Tailwind) - UI layer  
+3. **MCP Server** (Node.js) - Cursor bridge layer
+
+## Agent Roles
+
+### @orchestrator
+- Main coordinator for the entire system
+- Breaks down high-level requests into tasks
+- Coordinates between agents
+- Uses MCP tools: `analyze-request`, `spawn-sub-orchestrator`
+
+### @frontend
+- Works on React components and UI
+- Allowed paths: `vibecoding-dashboard/src/**`
+- Uses: React, Tailwind CSS, react-beautiful-dnd
+- Should use `generate-context-pack` tool before starting work
+
+### @backend
+- Works on Express API and database
+- Allowed paths: `vibecoding-backend/src/**`
+- Uses: Express.js, SQLite, Node.js
+- Should use `generate-context-pack` tool before starting work
+
+### @qa
+- Testing and quality assurance
+- Can work across all layers
+- Focuses on testing, bug fixes, validation
+
+### @devops
+- Infrastructure and deployment
+- Configuration files, CI/CD, environment setup
+
+## Allowed Paths by Agent
+
+### @frontend
+- `vibecoding-dashboard/src/components/**`
+- `vibecoding-dashboard/src/services/**`
+- `vibecoding-dashboard/src/hooks/**`
+- `vibecoding-dashboard/src/utils/**`
+- `vibecoding-dashboard/src/App.js`
+- `vibecoding-dashboard/src/index.js`
+- `vibecoding-dashboard/tailwind.config.js`
+- `vibecoding-dashboard/postcss.config.js`
+
+### @backend
+- `vibecoding-backend/src/routes/**`
+- `vibecoding-backend/src/middleware/**`
+- `vibecoding-backend/src/config/**`
+- `vibecoding-backend/src/utils/**`
+- `vibecoding-backend/src/server.js`
+
+### @mcp-server
+- `vibecoding-mcp-server/src/tools/**`
+- `vibecoding-mcp-server/src/services/**`
+- `vibecoding-mcp-server/src/utils/**`
+- `vibecoding-mcp-server/src/mcp-server.js`
+
+## MCP Tools Usage
+
+### Before Starting Work
+1. Call `generate-context-pack` with your `projectId` and `taskId`
+2. Read the context pack carefully
+3. Understand your allowed paths
+4. Review project knowledge (change patterns, dependencies)
+
+### When Completing Work
+1. Call `update-task-status` to mark task as 'DONE'
+2. If blocked, set status to 'BLOCKED' and document the blocker
+
+### For Orchestration
+1. Use `analyze-request` to break down user requests
+2. Use `spawn-sub-orchestrator` to create project-specific orchestrators
+
+## Code Style Guidelines
+
+### JavaScript/Node.js
+- Use ES6+ features
+- Prefer async/await over promises
+- Use const/let, avoid var
+- Follow existing code patterns
+- Add JSDoc comments for functions
+
+### React
+- Use functional components with hooks
+- Keep components small and focused
+- Extract reusable logic into custom hooks
+- Use meaningful prop names
+- Handle loading and error states
+
+### API Design
+- RESTful endpoints
+- Consistent error responses
+- Input validation on all endpoints
+- Proper HTTP status codes
+
+## Database Guidelines
+
+- Use parameterized queries (prevent SQL injection)
+- Handle foreign key constraints
+- Use transactions for multi-step operations
+- Log database errors appropriately
+
+## Testing Approach
+
+- Test API endpoints manually or with tools
+- Test React components in browser
+- Verify database operations
+- Check error handling paths
+
+## Common Tasks
+
+### Adding a New Feature
+1. Create tasks using `analyze-request`
+2. Get context pack for your task
+3. Implement following change patterns
+4. Check file dependencies
+5. Test thoroughly
+6. Update task status
+
+### Fixing a Bug
+1. Reproduce the bug
+2. Identify root cause
+3. Fix following existing patterns
+4. Test the fix
+5. Update related documentation if needed
+
+### Refactoring
+1. Understand current implementation
+2. Check all usages (file dependencies)
+3. Refactor incrementally
+4. Test after each change
+5. Update documentation
+
+## Important Notes
+
+- **Always respect allowed paths** - Don't modify files outside your scope
+- **Use MCP tools** - They provide focused context and prevent bloat
+- **Follow change patterns** - They document proven approaches
+- **Check dependencies** - Understand impact before making changes
+- **Update knowledge files** - Keep PROJECT_MAP, COMPONENT_SUMMARIES, etc. current
+
+## Error Handling
+
+- Always handle errors gracefully
+- Log errors with context
+- Provide user-friendly error messages
+- Don't expose sensitive information in errors
+
+## Security
+
+- Never commit secrets or API keys
+- Validate all user input
+- Use parameterized database queries
+- Follow security best practices for authentication
+

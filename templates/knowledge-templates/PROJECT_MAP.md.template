@@ -1,0 +1,60 @@
+# Project Map
+
+This document provides a high-level overview of the project structure and key file locations.
+
+## Directory Structure
+
+```
+project-root/
+├── src/
+│   ├── components/          # React components
+│   │   ├── common/         # Shared/reusable components
+│   │   └── features/       # Feature-specific components
+│   ├── pages/              # Page-level components
+│   ├── services/           # API services and business logic
+│   ├── utils/              # Utility functions
+│   ├── hooks/              # Custom React hooks
+│   ├── styles/             # Global styles and themes
+│   └── App.js              # Main app component
+├── public/                  # Static assets
+├── package.json            # Dependencies and scripts
+└── README.md               # Project documentation
+```
+
+## Key Files
+
+### Frontend
+- `src/App.js` - Main application entry point
+- `src/index.js` - React DOM root
+- `src/services/api.js` - API client configuration
+- `src/components/` - All React components
+
+### Backend (if applicable)
+- `server.js` - Express server entry point
+- `routes/` - API route handlers
+- `models/` - Data models
+- `middleware/` - Express middleware
+
+## Entry Points
+
+- **Frontend**: `src/index.js` → `src/App.js`
+- **Backend**: `server.js` or `src/server.js`
+
+## Build Output
+
+- Frontend build: `build/` or `dist/`
+- Backend: Runs directly from source
+
+## Configuration Files
+
+- `package.json` - Dependencies and scripts
+- `.env` - Environment variables (not committed)
+- `tailwind.config.js` - Tailwind CSS configuration (if used)
+- `tsconfig.json` - TypeScript configuration (if used)
+
+## Notes
+
+- Update this map as the project structure evolves
+- Include any special directories or conventions specific to this project
+- Document any non-standard file locations
+

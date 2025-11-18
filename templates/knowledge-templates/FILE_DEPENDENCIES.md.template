@@ -1,0 +1,110 @@
+# File Dependencies
+
+This document maps critical file dependencies and relationships. Use this to understand what files might be affected when making changes.
+
+## Critical Dependencies
+
+### If you change `src/services/api.js`:
+- **MUST CHECK**: All components that use API calls
+- **MUST CHECK**: All custom hooks that fetch data
+- **IMPACT**: Changes to API client affect all network requests
+- **TEST**: All API-dependent features
+
+### If you change `src/App.js`:
+- **MUST CHECK**: All routes and route components
+- **MUST CHECK**: Global context providers
+- **IMPACT**: Changes affect app-wide structure
+- **TEST**: Navigation and global state
+
+### If you change authentication logic:
+- **MUST CHECK**: `src/hooks/useAuth.js` (if exists)
+- **MUST CHECK**: All protected routes
+- **MUST CHECK**: API interceptors for auth tokens
+- **IMPACT**: Security-critical changes
+- **TEST**: Login, logout, protected routes
+
+## Component Dependencies
+
+### Shared Components
+If you modify a shared component in `src/components/common/`:
+- **MUST CHECK**: All components that import it
+- **USE**: `grep -r "ComponentName" src/` to find usages
+- **IMPACT**: Visual or functional changes affect multiple features
+
+### Context Providers
+If you modify a context provider:
+- **MUST CHECK**: All components using `useContext` for that context
+- **IMPACT**: State management changes affect all consumers
+- **TEST**: All features using that context
+
+## Database Dependencies
+
+### If you change a database model:
+- **MUST CHECK**: All API routes that use that model
+- **MUST CHECK**: All frontend components displaying that data
+- **MUST CHECK**: Migration scripts
+- **IMPACT**: Data structure changes require coordinated updates
+
+### If you change database schema:
+- **MUST CHECK**: All queries using that table/collection
+- **MUST CHECK**: All models referencing that schema
+- **IMPACT**: Breaking changes require migration
+- **TEST**: All database operations
+
+## API Dependencies
+
+### Backend API Routes
+If you change an API endpoint:
+- **MUST CHECK**: Frontend services calling that endpoint
+- **MUST CHECK**: Frontend components using those services
+- **IMPACT**: API contract changes break frontend
+- **TEST**: All API consumers
+
+### Frontend API Services
+If you change an API service function:
+- **MUST CHECK**: All components calling that function
+- **MUST CHECK**: All hooks using that service
+- **IMPACT**: Function signature changes break callers
+- **TEST**: All usages
+
+## Configuration Dependencies
+
+### If you change `package.json`:
+- **MUST CHECK**: All code using those dependencies
+- **MUST CHECK**: Build configuration
+- **IMPACT**: Dependency updates may introduce breaking changes
+- **TEST**: Full application test suite
+
+### If you change environment variables:
+- **MUST CHECK**: All code reading those variables
+- **MUST CHECK**: `.env.example` file
+- **IMPACT**: Configuration changes affect behavior
+- **TEST**: All features using that configuration
+
+## Styling Dependencies
+
+### If you change global styles:
+- **MUST CHECK**: All components (may inherit styles)
+- **IMPACT**: Visual changes affect entire app
+- **TEST**: Visual regression testing
+
+### If you change Tailwind config:
+- **MUST CHECK**: All components using Tailwind classes
+- **IMPACT**: Utility class changes affect styling
+- **TEST**: Visual appearance of all pages
+
+## Dependency Graph Tips
+
+1. **Before making changes**: Search for all usages of the file/function
+2. **Use grep/ripgrep**: `grep -r "functionName" src/`
+3. **Check imports**: Look for all files importing your target
+4. **Test incrementally**: Test affected areas as you make changes
+5. **Document changes**: Update this file when dependencies change
+
+## Notes
+
+- Keep this document updated as dependencies evolve
+- Add new critical dependencies as they are discovered
+- Use this as a safety checklist before major changes
+- Consider using dependency analysis tools for large projects
+

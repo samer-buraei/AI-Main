@@ -1,0 +1,78 @@
+# Component Summaries
+
+This document provides summaries of key components in the project, their purpose, and how they interact.
+
+## Core Components
+
+### App Component
+- **Location**: `src/App.js`
+- **Purpose**: Main application component, handles routing and global state
+- **Key Features**:
+  - Application-wide context providers
+  - Main layout structure
+  - Route configuration
+- **Dependencies**: React Router (if used), context providers
+
+### API Service
+- **Location**: `src/services/api.js`
+- **Purpose**: Centralized API client for backend communication
+- **Key Features**:
+  - Axios instance configuration
+  - Request/response interceptors
+  - Error handling
+- **Dependencies**: axios
+- **Used By**: All components that need to fetch data
+
+## Feature Components
+
+### Example: User Profile Component
+- **Location**: `src/components/features/UserProfile.js`
+- **Purpose**: Displays and manages user profile information
+- **Props**:
+  - `userId` (string, required) - The user ID to display
+  - `onUpdate` (function, optional) - Callback when profile is updated
+- **State**: Manages profile data, loading state, error state
+- **API Calls**: Uses `api.getUser(userId)` and `api.updateUser(userId, data)`
+- **Dependencies**: API service, common UI components
+
+## Shared/Common Components
+
+### Button Component
+- **Location**: `src/components/common/Button.js`
+- **Purpose**: Reusable button component with consistent styling
+- **Props**:
+  - `variant` (string) - 'primary', 'secondary', 'danger'
+  - `size` (string) - 'sm', 'md', 'lg'
+  - `disabled` (boolean)
+  - `onClick` (function)
+- **Usage**: Used throughout the app for consistent button styling
+
+### Modal Component
+- **Location**: `src/components/common/Modal.js`
+- **Purpose**: Reusable modal/dialog component
+- **Props**:
+  - `isOpen` (boolean) - Controls visibility
+  - `onClose` (function) - Callback when modal should close
+  - `title` (string) - Modal title
+  - `children` (ReactNode) - Modal content
+- **Usage**: Wraps content that should appear in a modal overlay
+
+## Custom Hooks
+
+### useAuth Hook
+- **Location**: `src/hooks/useAuth.js`
+- **Purpose**: Manages authentication state and user session
+- **Returns**:
+  - `user` - Current user object or null
+  - `isAuthenticated` - Boolean
+  - `login(email, password)` - Login function
+  - `logout()` - Logout function
+- **Used By**: Components that need authentication state
+
+## Notes
+
+- Add summaries for all major components as they are created
+- Include props, state, and dependencies for each component
+- Document any special patterns or conventions used
+- Update this document as components evolve
+

@@ -1,0 +1,152 @@
+# Change Patterns
+
+This document describes common patterns and recipes for making changes to this project. Follow these patterns to maintain consistency and avoid common pitfalls.
+
+## Adding a New API Endpoint
+
+### Pattern: RESTful Endpoint Creation
+
+1. **Backend Route** (`routes/example.js`):
+   ```javascript
+   router.post('/api/example', async (req, res) => {
+     // Validation
+     // Business logic
+     // Response
+   });
+   ```
+
+2. **Frontend Service** (`src/services/api.js`):
+   ```javascript
+   export const createExample = async (data) => {
+     return apiClient.post('/example', data);
+   };
+   ```
+
+3. **Usage in Component**:
+   ```javascript
+   const { createExample } = useApi();
+   await createExample(formData);
+   ```
+
+**Key Points**:
+- Always validate input on the backend
+- Handle errors consistently
+- Use TypeScript types if available
+- Update API documentation
+
+## Adding a New UI Component
+
+### Pattern: Component Creation
+
+1. **Create Component File** (`src/components/features/NewComponent.js`):
+   ```javascript
+   export default function NewComponent({ prop1, prop2 }) {
+     // Component logic
+     return <div>...</div>;
+   }
+   ```
+
+2. **Add to Component Index** (if using barrel exports):
+   ```javascript
+   export { default as NewComponent } from './NewComponent';
+   ```
+
+3. **Use in Parent**:
+   ```javascript
+   import NewComponent from '@/components/features/NewComponent';
+   ```
+
+**Key Points**:
+- Follow naming conventions (PascalCase)
+- Use PropTypes or TypeScript for prop validation
+- Make components reusable when possible
+- Add to component summaries document
+
+## Modifying Database Schema
+
+### Pattern: Database Migration
+
+1. **Create Migration Script**:
+   ```javascript
+   // migrations/add_new_table.js
+   db.run(`CREATE TABLE new_table (...)`);
+   ```
+
+2. **Update Models**:
+   ```javascript
+   // models/NewModel.js
+   class NewModel { ... }
+   ```
+
+3. **Update API Routes**:
+   - Add CRUD endpoints for new model
+   - Update existing endpoints if relationships change
+
+**Key Points**:
+- Always backup database before migrations
+- Test migrations on development data first
+- Document schema changes
+- Consider data migration needs
+
+## Adding Dark Mode / Theme Support
+
+### Pattern: Theme Implementation
+
+1. **Create Theme Context** (`src/contexts/ThemeContext.js`):
+   ```javascript
+   const ThemeContext = createContext();
+   export const useTheme = () => useContext(ThemeContext);
+   ```
+
+2. **Update Tailwind Config** (if using Tailwind):
+   ```javascript
+   // tailwind.config.js
+   darkMode: 'class',
+   ```
+
+3. **Add Theme Toggle**:
+   ```javascript
+   <button onClick={() => toggleTheme()}>Toggle Theme</button>
+   ```
+
+**Key Points**:
+- Store theme preference in localStorage
+- Update all components to support theme
+- Test contrast ratios for accessibility
+
+## Common Patterns
+
+### Error Handling Pattern
+```javascript
+try {
+  const result = await apiCall();
+  // Handle success
+} catch (error) {
+  // Log error
+  // Show user-friendly message
+  // Handle gracefully
+}
+```
+
+### Loading State Pattern
+```javascript
+const [isLoading, setIsLoading] = useState(false);
+// Set loading before async operation
+// Clear loading after completion
+```
+
+### Form Validation Pattern
+```javascript
+const [errors, setErrors] = useState({});
+// Validate on submit
+// Show errors inline
+// Prevent submission if invalid
+```
+
+## Notes
+
+- Always follow existing patterns when possible
+- Document new patterns as they emerge
+- Update this document when patterns change
+- Consider creating reusable utilities for common patterns
+

@@ -1,0 +1,111 @@
+/**
+ * App Component
+ * Main application component
+ */
+
+import React, { useState } from 'react';
+import { useProjects } from './hooks/useProjects';
+import KanbanBoard from './components/KanbanBoard';
+import ProjectList from './components/ProjectList';
+import CreateProjectModal from './components/CreateProjectModal';
+import { Plus } from 'lucide-react';
+import './App.css';
+
+function App() {
+  const { projects, isLoading, createProject } = useProjects();
+  const [selectedProject, setSelectedProject] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  // Auto-select first project when projects load
+  React.useEffect(() => {
+    if (projects.length > 0 && !selectedProject) {
+      setSelectedProject(projects[0]);
+    }
+  }, [projects, selectedProject]);
+
+  const handleProjectCreated = async (projectData) => {
+    try {
+      const newProject = await createProject(projectData);
+      setSelectedProject(newProject);
+      setIsModalOpen(false);
+      return newProject;
+    } catch (error) {
+      throw error;
+    }
+  };
+
+  return (
+    <div className="App flex h-screen overflow-hidden bg-gray-900">
+      {/* Left Sidebar (Project List) */}
+      <aside className="w-1/4 h-screen bg-gray-800 p-4 overflow-y-auto border-r border-gray-700">
+        <div className="mb-6">
+          <h1 className="text-2xl font-bold text-white mb-2">Vibecoding PM</h1>
+          <p className="text-sm text-gray-400">Project Manager</p>
+        </div>
+
+        {isLoading ? (
+          <div className="text-gray-400 text-sm">Loading projects...</div>
+        ) : (
+          <>
+            <ProjectList
+              projects={projects}
+              selectedProject={selectedProject}
+              onSelectProject={setSelectedProject}
+            />
+            <button
+              onClick={() => setIsModalOpen(true)}
+              className="mt-4 w-full bg-blue-600 hover:bg-blue-700 text-white p-3 rounded-lg flex items-center justify-center gap-2 transition-colors font-medium"
+              aria-label="Create new project"
+            >
+              <Plus size={18} />
+              New Project
+            </button>
+          </>
+        )}
+      </aside>
+
+      {/* Main Content (Kanban Board) */}
+      <main className="w-3/4 h-screen p-8 overflow-y-auto">
+        {!isLoading && selectedProject && (
+          <KanbanBoard key={selectedProject.id} project={selectedProject} />
+        )}
+
+        {!isLoading && !selectedProject && projects.length === 0 && (
+          <div className="flex items-center justify-center h-full">
+            <div className="text-center">
+              <p className="text-2xl text-gray-500 mb-4">
+                No projects found.
+              </p>
+              <p className="text-gray-400 mb-6">
+                Click "New Project" to get started.
+              </p>
+              <button
+                onClick={() => setIsModalOpen(true)}
+                className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-colors"
+              >
+                Create Your First Project
+              </button>
+            </div>
+          </div>
+        )}
+
+        {!isLoading && !selectedProject && projects.length > 0 && (
+          <div className="flex items-center justify-center h-full">
+            <p className="text-xl text-gray-400">Select a project to view tasks</p>
+          </div>
+        )}
+      </main>
+
+      {/* Create Project Modal */}
+      {isModalOpen && (
+        <CreateProjectModal
+          onClose={() => setIsModalOpen(false)}
+          onProjectCreated={handleProjectCreated}
+        />
+      )}
+    </div>
+  );
+}
+
+export default App;
+
