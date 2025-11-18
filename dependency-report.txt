@@ -1,0 +1,44 @@
+Dependency Report - Tue 11/18/2025 17:33:51.50 
+======================================== 
+ 
+ 
+======================================== 
+Backend 
+======================================== 
+ 
+[OUTDATED PACKAGES] 
+The system cannot find the batch label specified - check_project
+
+========================================
+  Checking Frontend
+========================================
+The process cannot access the file because it is being used by another process.
+The process cannot access the file because it is being used by another process.
+The process cannot access the file because it is being used by another process.
+The process cannot access the file because it is being used by another process.
+[ERROR] Directory not found: vibecoding-dashboard
+The process cannot access the file because it is being used by another process.
+
+========================================
+  Checking MCP Server
+========================================
+The process cannot access the file because it is being used by another process.
+The process cannot access the file because it is being used by another process.
+The process cannot access the file because it is being used by another process.
+The process cannot access the file because it is being used by another process.
+[ERROR] Directory not found: vibecoding-mcp-server
+The process cannot access the file because it is being used by another process.
+
+========================================
+  Summary Complete
+========================================
+
+Full report saved to: C:\Users\WIN 10\Desktop\AI Main\dependency-report.txt
+
+Next steps:
+  1. Review the report above
+  2. Run 'npm update' in each folder to update minor versions
+  3. For major updates, use 'npm install package@latest'
+  4. Test after each update
+
+Press any key to continue . . . 

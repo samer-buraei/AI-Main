@@ -26,9 +26,19 @@ echo [OK] Docker daemon is running
 REM Check Docker memory allocation
 echo [2/7] Checking Docker memory allocation...
 for /f "tokens=*" %%m in ('docker info --format "{{.MemTotal}}"') do set DOCKER_MEM=%%m
+set /a DOCKER_MEM_GB=%DOCKER_MEM% / 1073741824 2>nul
 if defined DOCKER_MEM (
-    echo [OK] Docker memory: %DOCKER_MEM% bytes
-    echo [INFO] Recommended: 12 GB+ for this project
+    echo [OK] Docker memory: ~%DOCKER_MEM_GB% GB allocated
+    if %DOCKER_MEM_GB% LSS 5 (
+        color 0E
+        echo [WARNING] Low memory! Recommended: 6-8 GB for 16GB system
+        echo             Run check-docker-memory.bat for details
+    ) else if %DOCKER_MEM_GB% LSS 10 (
+        echo [OPTIMAL] Memory is well-balanced for your system
+    ) else (
+        echo [INFO] High allocation - may impact Windows performance
+        echo       Consider reducing to 6-8 GB
+    )
 ) else (
     echo [WARNING] Could not detect Docker memory allocation
 )

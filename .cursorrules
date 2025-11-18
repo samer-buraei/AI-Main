@@ -79,12 +79,44 @@ if exist "path with spaces\file.txt" (...)
 copy "source path" "dest path"
 ```
 
+### Preventing Window Flash (CRITICAL)
+```batch
+# ALWAYS prevent batch files from flashing closed when run from Explorer
+# Add these at the END of EVERY batch script:
+
+echo.
+echo ========================================
+echo   Operation Complete
+echo ========================================
+echo Press any key to close this window...
+pause >nul
+
+# For error exits, ALWAYS pause before exit:
+if errorlevel 1 (
+    echo.
+    echo [ERROR] Operation failed
+    echo Press any key to close...
+    pause >nul
+    exit /b 1
+)
+
+# Alternative: Use cmd /k wrapper at the start (for complex scripts)
+if "%1" NEQ "wrapped" (
+    cmd /k ""%~f0" wrapped"
+    exit /b
+)
+
+# NEVER create a batch script without a pause or cmd /k wrapper!
+# Users running from Explorer need to see results/errors.
+```
+
 ### Error Level Checking
 ```batch
 # IMMEDIATE checking (preferred for simple cases)
 command
 if errorlevel 1 (
     echo Command failed
+    pause
     exit /b 1
 )
 
@@ -354,6 +386,61 @@ volumes:
 - ✅ No antivirus interference
 - ✅ Survives container rebuilds
 - ✅ Clean host filesystem
+
+### Memory Optimization (IMPORTANT)
+**Rule: Docker should NOT use more than 50% of system RAM**
+
+```
+System RAM | Docker Limit | Reasoning
+-----------|--------------|----------
+8 GB       | 3-4 GB       | Leave 4GB for Windows
+16 GB      | 6-8 GB       | Leave 8GB for Windows + other apps
+32 GB      | 12-16 GB     | Can afford more headroom
+```
+
+**Lightweight Docker Setup:**
+- Use `node:18-alpine` instead of `node:18` (saves 700MB per image)
+- Multi-stage builds to keep final images small
+- `.dockerignore` to exclude unnecessary files
+- Shared base layers across services
+- Minimize installed system packages
+
+**Alpine Linux Template (Lightweight):**
+```dockerfile
+FROM node:18-alpine
+
+# Install only essential build tools
+RUN apk add --no-cache python3 make g++
+
+WORKDIR /app
+
+# Install dependencies first (cache layer)
+COPY package*.json ./
+RUN npm install --legacy-peer-deps
+
+# Copy source code
+COPY . ./
+
+EXPOSE 3000
+CMD ["npm", "start"]
+```
+
+**Multi-Stage Build Template (Production):**
+```dockerfile
+# Stage 1: Build
+FROM node:18-alpine AS builder
+WORKDIR /app
+COPY package*.json ./
+RUN npm ci --only=production
+
+# Stage 2: Runtime (smaller final image)
+FROM node:18-alpine
+WORKDIR /app
+COPY --from=builder /app/node_modules ./node_modules
+COPY . ./
+EXPOSE 3000
+CMD ["npm", "start"]
+```
 
 ### Docker Launcher Template (Comprehensive)
 ```batch
