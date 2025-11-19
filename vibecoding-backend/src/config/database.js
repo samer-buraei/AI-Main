@@ -127,6 +127,32 @@ function initializeSchema() {
             return reject(err);
           }
           logger.debug('Workflow state table ready');
+        }
+      );
+
+      // 5. Orchestration Sessions Table
+      // This stores the "state" of our AI analysis workflow
+      // Junior Dev Note: We use JSON columns for flexibility - no need to change schema when adding new fields!
+      db.run(
+        `CREATE TABLE IF NOT EXISTS orchestration_sessions (
+          id TEXT PRIMARY KEY,
+          project_id TEXT NOT NULL,
+          status TEXT DEFAULT 'pending',
+          github_url TEXT,
+          repo_metadata TEXT,
+          analysis_json TEXT,
+          qa_history TEXT,
+          final_plan TEXT,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
+        )`,
+        (err) => {
+          if (err) {
+            logger.error('Error creating orchestration_sessions table', { error: err.message });
+            return reject(err);
+          }
+          logger.debug('Orchestration sessions table ready');
           logger.info('Database schema initialized successfully');
           resolve();
         }

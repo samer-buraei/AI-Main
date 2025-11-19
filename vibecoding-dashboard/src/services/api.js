@@ -221,6 +221,48 @@ export const updateWorkflow = async (projectId, workflowData) => {
   }
 };
 
+// ============================================================================
+// ORCHESTRATOR API
+// ============================================================================
+
+export const analyzeProject = async ({ repoUrls, goal, projectId }) => {
+  try {
+    const response = await retryRequest(() =>
+      apiClient.post('/orchestrator/analyze', {
+        repoUrls,
+        goal,
+        projectId,
+      })
+    );
+    return { data: response.data, error: null };
+  } catch (error) {
+    return { data: null, error: handleError(error) };
+  }
+};
+
+export const generatePlan = async ({ sessionId, answers }) => {
+  try {
+    const response = await retryRequest(() =>
+      apiClient.post('/orchestrator/plan', {
+        sessionId,
+        answers,
+      })
+    );
+    return { data: response.data, error: null };
+  } catch (error) {
+    return { data: null, error: handleError(error) };
+  }
+};
+
+export const getOrchestrationStatus = async (sessionId) => {
+  try {
+    const response = await retryRequest(() => apiClient.get(`/orchestrator/${sessionId}/status`));
+    return { data: response.data, error: null };
+  } catch (error) {
+    return { data: null, error: handleError(error) };
+  }
+};
+
 // Export default object for convenience
 const api = {
   // Projects
@@ -240,6 +282,10 @@ const api = {
   // Workflow
   getWorkflow,
   updateWorkflow,
+  // Orchestrator
+  analyzeProject,
+  generatePlan,
+  getOrchestrationStatus,
 };
 
 export default api;

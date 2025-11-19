@@ -15,6 +15,7 @@ const projectRoutes = require('./routes/projects');
 const taskRoutes = require('./routes/tasks');
 const knowledgeRoutes = require('./routes/knowledge_files');
 const workflowRoutes = require('./routes/workflow');
+const orchestratorRoutes = require('./routes/orchestrator');
 
 // Constants
 const PORT = process.env.PORT || 4000;
@@ -41,6 +42,7 @@ app.use('/api/projects', projectRoutes);
 app.use('/api/tasks', taskRoutes);
 app.use('/api/knowledge', knowledgeRoutes);
 app.use('/api/workflow', workflowRoutes);
+app.use('/api/orchestrator', orchestratorRoutes);
 
 // 404 Handler (must be after all routes)
 app.use(notFoundHandler);

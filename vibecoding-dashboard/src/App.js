@@ -8,13 +8,15 @@ import { useProjects } from './hooks/useProjects';
 import KanbanBoard from './components/KanbanBoard';
 import ProjectList from './components/ProjectList';
 import CreateProjectModal from './components/CreateProjectModal';
-import { Plus } from 'lucide-react';
+import ProjectWizard from './components/ProjectWizard';
+import { Plus, Sparkles } from 'lucide-react';
 import './App.css';
 
 function App() {
-  const { projects, isLoading, createProject } = useProjects();
+  const { projects, isLoading, createProject, loadProjects } = useProjects();
   const [selectedProject, setSelectedProject] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isWizardOpen, setIsWizardOpen] = useState(false);
 
   // Auto-select first project when projects load
   React.useEffect(() => {
@@ -32,6 +34,15 @@ function App() {
     } catch (error) {
       throw error;
     }
+  };
+
+  const handleWizardCompleted = async (project) => {
+    // Reload projects to get the new one with tasks
+    await loadProjects();
+    if (project) {
+      setSelectedProject(project);
+    }
+    setIsWizardOpen(false);
   };
 
   return (
@@ -52,14 +63,24 @@ function App() {
               selectedProject={selectedProject}
               onSelectProject={setSelectedProject}
             />
-            <button
-              onClick={() => setIsModalOpen(true)}
-              className="mt-4 w-full bg-blue-600 hover:bg-blue-700 text-white p-3 rounded-lg flex items-center justify-center gap-2 transition-colors font-medium"
-              aria-label="Create new project"
-            >
-              <Plus size={18} />
-              New Project
-            </button>
+            <div className="mt-4 space-y-2">
+              <button
+                onClick={() => setIsWizardOpen(true)}
+                className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white p-3 rounded-lg flex items-center justify-center gap-2 transition-colors font-medium"
+                aria-label="Create project with wizard"
+              >
+                <Sparkles size={18} />
+                New Project (Wizard)
+              </button>
+              <button
+                onClick={() => setIsModalOpen(true)}
+                className="w-full bg-gray-700 hover:bg-gray-600 text-white p-2 rounded-lg flex items-center justify-center gap-2 transition-colors text-sm"
+                aria-label="Create project (quick)"
+              >
+                <Plus size={16} />
+                Quick Create
+              </button>
+            </div>
           </>
         )}
       </aside>
@@ -101,6 +122,14 @@ function App() {
         <CreateProjectModal
           onClose={() => setIsModalOpen(false)}
           onProjectCreated={handleProjectCreated}
+        />
+      )}
+
+      {/* Project Wizard */}
+      {isWizardOpen && (
+        <ProjectWizard
+          onClose={() => setIsWizardOpen(false)}
+          onProjectCreated={handleWizardCompleted}
         />
       )}
     </div>
