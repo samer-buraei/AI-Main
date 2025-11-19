@@ -21,7 +21,7 @@ router.post(
   validateRequiredFields(['name']),
   async (req, res, next) => {
     try {
-      const { name, description, type, tech_stack } = req.body;
+      const { name, description, type, tech_stack, custom_agents, custom_mcps } = req.body;
       const db = getDatabase();
 
       const newProject = {
@@ -61,6 +61,62 @@ router.post(
               logger.debug('Workflow state created', { projectId: newProject.id });
             }
           });
+
+          // NEW: Save Custom Agents to AGENTS_CONFIG knowledge file
+          if (custom_agents && custom_agents.length > 0) {
+            const agentsContent = custom_agents.map(agent => 
+              `## ${agent.role}\n**Description:** ${agent.description || 'No description'}\n**Instructions:** ${agent.instructions || 'Standard agent instructions'}`
+            ).join('\n\n---\n\n');
+
+            const agentsConfigId = uuidv4();
+            const agentsConfigSql = `
+              INSERT INTO knowledge_files (id, project_id, file_type, content, version)
+              VALUES (?, ?, 'AGENTS_CONFIG', ?, 1)
+            `;
+
+            db.run(agentsConfigSql, [agentsConfigId, newProject.id, agentsContent], (err) => {
+              if (err) {
+                logger.error('Error saving custom agents', {
+                  error: err.message,
+                  projectId: newProject.id,
+                });
+                // Don't fail the request, but log the error
+              } else {
+                logger.info('Custom agents saved', { 
+                  projectId: newProject.id, 
+                  count: custom_agents.length 
+                });
+              }
+            });
+          }
+
+          // NEW: Save Custom MCPs to MCP_CONFIG knowledge file (optional)
+          if (custom_mcps && custom_mcps.length > 0) {
+            const mcpsContent = custom_mcps.map(mcp => 
+              `## ${mcp.name}\n**Description:** ${mcp.description || 'No description'}\n**Package:** ${mcp.package || 'N/A'}`
+            ).join('\n\n---\n\n');
+
+            const mcpConfigId = uuidv4();
+            const mcpConfigSql = `
+              INSERT INTO knowledge_files (id, project_id, file_type, content, version)
+              VALUES (?, ?, 'MCP_CONFIG', ?, 1)
+            `;
+
+            db.run(mcpConfigSql, [mcpConfigId, newProject.id, mcpsContent], (err) => {
+              if (err) {
+                logger.error('Error saving custom MCPs', {
+                  error: err.message,
+                  projectId: newProject.id,
+                });
+                // Don't fail the request, but log the error
+              } else {
+                logger.info('Custom MCPs saved', { 
+                  projectId: newProject.id, 
+                  count: custom_mcps.length 
+                });
+              }
+            });
+          }
 
           res.status(201).json({
             ...newProject,

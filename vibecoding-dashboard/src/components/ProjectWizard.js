@@ -21,6 +21,12 @@ export default function ProjectWizard({ onClose, onProjectCreated }) {
   const [plan, setPlan] = useState(null);
   const [scans, setScans] = useState([]);
   const [error, setError] = useState(null);
+  
+  // Agent and MCP Selection State
+  const [selectedRecommendations, setSelectedRecommendations] = useState({ 
+    agents: [], 
+    mcps: [] 
+  });
 
   // STEP 1: HANDLING INPUTS
   const handleAddRepo = () => setRepoUrls([...repoUrls, '']);
@@ -75,6 +81,37 @@ export default function ProjectWizard({ onClose, onProjectCreated }) {
     }
   };
 
+  // Agent Selection Handlers
+  const toggleAgent = (agent) => {
+    const exists = selectedRecommendations.agents.find(a => a.role === agent.role);
+    if (exists) {
+      setSelectedRecommendations(prev => ({
+        ...prev,
+        agents: prev.agents.filter(a => a.role !== agent.role)
+      }));
+    } else {
+      setSelectedRecommendations(prev => ({
+        ...prev,
+        agents: [...prev.agents, agent]
+      }));
+    }
+  };
+
+  const toggleMCP = (mcp) => {
+    const exists = selectedRecommendations.mcps.find(m => m.name === mcp.name);
+    if (exists) {
+      setSelectedRecommendations(prev => ({
+        ...prev,
+        mcps: prev.mcps.filter(m => m.name !== mcp.name)
+      }));
+    } else {
+      setSelectedRecommendations(prev => ({
+        ...prev,
+        mcps: [...prev.mcps, mcp]
+      }));
+    }
+  };
+
   // STEP 2: HANDLING ANSWERS
   const submitAnswers = async () => {
     // Check if all questions are answered
@@ -119,7 +156,7 @@ export default function ProjectWizard({ onClose, onProjectCreated }) {
     setError(null);
 
     try {
-      // First, create the project
+      // First, create the project with custom agents and MCPs
       const projectResult = await api.createProject({
         name: goals.mvp.substring(0, 50) || 'New Project',
         description: `MVP: ${goals.mvp}\nFuture: ${goals.future}`,
@@ -129,6 +166,8 @@ export default function ProjectWizard({ onClose, onProjectCreated }) {
           backend: 'TBD',
           database: 'TBD',
         },
+        custom_agents: selectedRecommendations.agents, // Pass selected agents
+        custom_mcps: selectedRecommendations.mcps,     // Pass selected MCPs
       });
 
       if (projectResult.error) {
@@ -264,7 +303,7 @@ export default function ProjectWizard({ onClose, onProjectCreated }) {
             </div>
           )}
 
-          {/* --- STEP 2: QUESTIONS --- */}
+          {/* --- STEP 2: QUESTIONS + AGENT SELECTION --- */}
           {step === 2 && (
             <div className="space-y-6">
               <p className="text-gray-300 mb-4">
@@ -309,6 +348,93 @@ export default function ProjectWizard({ onClose, onProjectCreated }) {
                   </div>
                 </div>
               ))}
+
+              {/* Agent & MCP Selection Section */}
+              <div className="mt-8 pt-6 border-t border-gray-700">
+                <h3 className="text-lg font-bold mb-4 text-purple-300">👥 Custom Team & Tools (Optional)</h3>
+                <p className="text-sm text-gray-400 mb-4">
+                  Select custom agents and MCP servers to enhance your project's capabilities.
+                </p>
+
+                {/* Standard Agents */}
+                <div className="mb-6">
+                  <h4 className="text-sm font-medium text-gray-300 mb-3">Standard Agents (Always Available)</h4>
+                  <div className="grid grid-cols-2 gap-2 text-sm">
+                    {['@orchestrator', '@frontend', '@backend', '@qa', '@devops'].map(role => (
+                      <div key={role} className="bg-gray-800 p-2 rounded text-gray-400">
+                        {role}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Recommended Custom Agents (from plan) */}
+                {plan?.recommended_agents && plan.recommended_agents.length > 0 && (
+                  <div className="mb-6">
+                    <h4 className="text-sm font-medium text-gray-300 mb-3">🌟 Recommended Custom Agents</h4>
+                    <div className="space-y-2">
+                      {plan.recommended_agents.map((agent, idx) => {
+                        const isSelected = selectedRecommendations.agents.find(a => a.role === agent.role);
+                        return (
+                          <label
+                            key={idx}
+                            className={`flex items-start gap-3 p-3 bg-gray-800 rounded cursor-pointer hover:bg-gray-700 transition-colors ${
+                              isSelected ? 'ring-2 ring-purple-500' : ''
+                            }`}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={!!isSelected}
+                              onChange={() => toggleAgent(agent)}
+                              className="mt-1 text-purple-500 focus:ring-purple-500"
+                            />
+                            <div className="flex-1">
+                              <div className="font-medium text-white">{agent.role}</div>
+                              <div className="text-xs text-gray-400 mt-1">{agent.description}</div>
+                            </div>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {/* Recommended MCP Servers */}
+                {plan?.recommended_mcps && plan.recommended_mcps.length > 0 && (
+                  <div className="mb-6">
+                    <h4 className="text-sm font-medium text-gray-300 mb-3">🔌 Recommended MCP Servers</h4>
+                    <div className="space-y-2">
+                      {plan.recommended_mcps.map((mcp, idx) => {
+                        const isSelected = selectedRecommendations.mcps.find(m => m.name === mcp.name);
+                        return (
+                          <label
+                            key={idx}
+                            className={`flex items-start gap-3 p-3 bg-gray-800 rounded cursor-pointer hover:bg-gray-700 transition-colors ${
+                              isSelected ? 'ring-2 ring-blue-500' : ''
+                            }`}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={!!isSelected}
+                              onChange={() => toggleMCP(mcp)}
+                              className="mt-1 text-blue-500 focus:ring-blue-500"
+                            />
+                            <div className="flex-1">
+                              <div className="font-medium text-white">{mcp.name}</div>
+                              <div className="text-xs text-gray-400 mt-1">{mcp.description}</div>
+                            </div>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {/* Manual Agent Input (Optional) */}
+                <div className="mt-4 p-3 bg-gray-800 rounded text-xs text-gray-400">
+                  <strong>Note:</strong> You can also add custom agents later by editing the project's knowledge files.
+                </div>
+              </div>
             </div>
           )}
 
