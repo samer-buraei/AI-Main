@@ -20,6 +20,7 @@ export default function ProjectWizard({ onClose, onProjectCreated }) {
   const [answers, setAnswers] = useState({});
   const [plan, setPlan] = useState(null);
   const [scans, setScans] = useState([]);
+  const [recommendations, setRecommendations] = useState(null); // New state for recommendations
   const [error, setError] = useState(null);
   
   // Agent and MCP Selection State
@@ -72,6 +73,7 @@ export default function ProjectWizard({ onClose, onProjectCreated }) {
       setSessionId(result.data.sessionId);
       setQuestions(result.data.questions || []);
       setScans(result.data.scans || []);
+      setRecommendations(result.data.recommendations); // Store recommendations from API
       setStep(2);
     } catch (err) {
       setError(err.message || 'Analysis failed. Please try again.');
@@ -368,12 +370,12 @@ export default function ProjectWizard({ onClose, onProjectCreated }) {
                   </div>
                 </div>
 
-                {/* Recommended Custom Agents (from plan) */}
-                {plan?.recommended_agents && plan.recommended_agents.length > 0 && (
+                {/* Recommended Custom Agents (from analysis) */}
+                {recommendations?.agents && recommendations.agents.length > 0 && (
                   <div className="mb-6">
                     <h4 className="text-sm font-medium text-gray-300 mb-3">🌟 Recommended Custom Agents</h4>
                     <div className="space-y-2">
-                      {plan.recommended_agents.map((agent, idx) => {
+                      {recommendations.agents.map((agent, idx) => {
                         const isSelected = selectedRecommendations.agents.find(a => a.role === agent.role);
                         return (
                           <label
@@ -399,12 +401,12 @@ export default function ProjectWizard({ onClose, onProjectCreated }) {
                   </div>
                 )}
 
-                {/* Recommended MCP Servers */}
-                {plan?.recommended_mcps && plan.recommended_mcps.length > 0 && (
+                {/* Recommended MCP Servers (from analysis) */}
+                {recommendations?.mcps && recommendations.mcps.length > 0 && (
                   <div className="mb-6">
                     <h4 className="text-sm font-medium text-gray-300 mb-3">🔌 Recommended MCP Servers</h4>
                     <div className="space-y-2">
-                      {plan.recommended_mcps.map((mcp, idx) => {
+                      {recommendations.mcps.map((mcp, idx) => {
                         const isSelected = selectedRecommendations.mcps.find(m => m.name === mcp.name);
                         return (
                           <label
@@ -422,6 +424,7 @@ export default function ProjectWizard({ onClose, onProjectCreated }) {
                             <div className="flex-1">
                               <div className="font-medium text-white">{mcp.name}</div>
                               <div className="text-xs text-gray-400 mt-1">{mcp.description}</div>
+                              <div className="text-xs text-blue-400 mt-1">Install: {mcp.installCommand}</div>
                             </div>
                           </label>
                         );

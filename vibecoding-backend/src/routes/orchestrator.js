@@ -113,6 +113,53 @@ router.post('/analyze', async (req, res) => {
       ]
     });
 
+    // 4. NEW: SKILL DETECTIVE (The Missing Piece) 🕵️‍♂️
+    const recommendations = {
+      agents: [],
+      mcps: []
+    };
+
+    const combinedConfig = scans
+      .filter(s => s.success && s.config)
+      .map(s => s.config)
+      .join('\n');
+
+    // -- Detect Database --
+    if (allFiles.includes('schema.prisma') || combinedConfig.includes('postgres') || combinedConfig.includes('sqlalchemy')) {
+      recommendations.mcps.push({
+        name: "PostgreSQL MCP",
+        reason: "Database detected. This tool allows the AI to query your live DB to write better SQL.",
+        installCommand: "npx -y @modelcontextprotocol/server-postgres"
+      });
+    }
+
+    // -- Detect Hardware/Drones --
+    if (combinedConfig.includes('dronekit') || combinedConfig.includes('mavros') || combinedConfig.includes('ardupilot')) {
+      recommendations.agents.push({
+        role: "@hardware",
+        description: "Specialist in MAVLink protocol, hardware interfaces, and real-time constraints.",
+        instructions: "Always check battery failsafes. Use 'dronekit' for Python control logic. Do not run heavy blocking code on the main thread."
+      });
+    }
+
+    // -- Detect Docker --
+    if (allFiles.includes('Dockerfile') || allFiles.includes('docker-compose.yml')) {
+      recommendations.mcps.push({
+        name: "Docker MCP",
+        reason: "Containerization detected. Allows the AI to spin up/down containers for testing.",
+        installCommand: "npx -y @modelcontextprotocol/server-docker"
+      });
+    }
+    
+    // -- Detect Python Data Science --
+    if (combinedConfig.includes('pandas') || combinedConfig.includes('numpy') || combinedConfig.includes('pytorch')) {
+       recommendations.agents.push({
+        role: "@data_scientist",
+        description: "Specialist in Python data analysis and ML models.",
+        instructions: "Focus on vectorization and efficient data processing. Use pandas/numpy conventions."
+      });
+    }
+
     // Store session in database
     const repoMetadata = JSON.stringify(scans);
     db.run(
@@ -134,6 +181,7 @@ router.post('/analyze', async (req, res) => {
       success: true,
       sessionId,
       questions,
+      recommendations, // <--- SEND THIS TO FRONTEND
       scans: scans.map(s => ({
         name: s.name,
         success: s.success,
