@@ -6,10 +6,11 @@
 import React, { useState } from 'react';
 import { useProjects } from './hooks/useProjects';
 import KanbanBoard from './components/KanbanBoard';
+import KnowledgeBase from './components/KnowledgeBase';
 import ProjectList from './components/ProjectList';
 import CreateProjectModal from './components/CreateProjectModal';
 import ProjectWizard from './components/ProjectWizard';
-import { Plus, Sparkles } from 'lucide-react';
+import { Plus, Sparkles, Kanban, BookOpen } from 'lucide-react';
 import './App.css';
 
 function App() {
@@ -17,6 +18,7 @@ function App() {
   const [selectedProject, setSelectedProject] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isWizardOpen, setIsWizardOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState('tasks'); // 'tasks' | 'knowledge'
 
   // Auto-select first project when projects load
   React.useEffect(() => {
@@ -85,10 +87,47 @@ function App() {
         )}
       </aside>
 
-      {/* Main Content (Kanban Board) */}
-      <main className="w-3/4 h-screen p-8 overflow-y-auto">
+      {/* Main Content (Kanban Board or Knowledge Base) */}
+      <main className="w-3/4 h-screen flex flex-col">
         {!isLoading && selectedProject && (
-          <KanbanBoard key={selectedProject.id} project={selectedProject} />
+          <>
+            {/* Tab Navigation */}
+            <div className="border-b border-gray-700 px-8 pt-4">
+              <div className="flex gap-4">
+                <button
+                  onClick={() => setActiveTab('tasks')}
+                  className={`px-4 py-2 flex items-center gap-2 transition-colors ${
+                    activeTab === 'tasks'
+                      ? 'text-blue-400 border-b-2 border-blue-400'
+                      : 'text-gray-400 hover:text-gray-300'
+                  }`}
+                >
+                  <Kanban size={18} />
+                  Tasks
+                </button>
+                <button
+                  onClick={() => setActiveTab('knowledge')}
+                  className={`px-4 py-2 flex items-center gap-2 transition-colors ${
+                    activeTab === 'knowledge'
+                      ? 'text-blue-400 border-b-2 border-blue-400'
+                      : 'text-gray-400 hover:text-gray-300'
+                  }`}
+                >
+                  <BookOpen size={18} />
+                  Knowledge Base
+                </button>
+              </div>
+            </div>
+
+            {/* Tab Content */}
+            <div className="flex-1 overflow-hidden p-8">
+              {activeTab === 'tasks' ? (
+                <KanbanBoard key={selectedProject.id} project={selectedProject} />
+              ) : (
+                <KnowledgeBase key={selectedProject.id} project={selectedProject} />
+              )}
+            </div>
+          </>
         )}
 
         {!isLoading && !selectedProject && projects.length === 0 && (

@@ -130,7 +130,30 @@ function initializeSchema() {
         }
       );
 
-      // 5. Orchestration Sessions Table
+      // 5. Knowledge Docs Table
+      // Stores technical directives, research papers, and project documentation
+      // Separate from knowledge_files (which stores AGENTS_CONFIG, MCP_CONFIG)
+      db.run(
+        `CREATE TABLE IF NOT EXISTS knowledge_docs (
+          id TEXT PRIMARY KEY,
+          project_id TEXT NOT NULL,
+          title TEXT NOT NULL,
+          content_md TEXT,
+          tags TEXT,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
+        )`,
+        (err) => {
+          if (err) {
+            logger.error('Error creating knowledge_docs table', { error: err.message });
+            return reject(err);
+          }
+          logger.debug('Knowledge docs table ready');
+        }
+      );
+
+      // 6. Orchestration Sessions Table
       // This stores the "state" of our AI analysis workflow
       // Junior Dev Note: We use JSON columns for flexibility - no need to change schema when adding new fields!
       db.run(

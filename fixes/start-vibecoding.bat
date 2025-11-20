@@ -34,8 +34,16 @@ REM First, check if node is in PATH
 where node >nul 2>nul
 if %ERRORLEVEL% EQU 0 (
     set NODE_FOUND=1
-    for /f "tokens=*" %%i in ('where node') do set NODE_PATH=%%i
-    echo [OK] Node.js found in PATH: !NODE_PATH!
+    REM Use a more robust method to get node path - avoid parsing issues
+    set "NODE_PATH="
+    for /f "usebackq delims=" %%i in (`where node 2^>nul`) do (
+        if not defined NODE_PATH set "NODE_PATH=%%i"
+    )
+    if defined NODE_PATH (
+        echo [OK] Node.js found in PATH: !NODE_PATH!
+    ) else (
+        echo [OK] Node.js found in PATH
+    )
 ) else (
     echo [WARNING] Node.js not in PATH, scanning common installation locations...
     
@@ -76,7 +84,11 @@ REM Verify Node.js is accessible and get version
 if !NODE_FOUND! EQU 1 (
     node --version >nul 2>nul
     if %ERRORLEVEL% EQU 0 (
-        for /f "tokens=*" %%v in ('node --version 2^>nul') do set NODE_VERSION=%%v
+        REM Use a safer method to get version - avoid parsing issues
+        set "NODE_VERSION="
+        for /f "usebackq delims=" %%v in (`node --version 2^>nul`) do (
+            if not defined NODE_VERSION set "NODE_VERSION=%%v"
+        )
         if defined NODE_VERSION (
             echo [OK] Node.js version: !NODE_VERSION!
         ) else (
@@ -123,11 +135,18 @@ set NPM_FOUND=0
 
 where npm >nul 2>nul
 if %ERRORLEVEL% EQU 0 (
-    npm --version >nul 2>nul
+    call npm --version >nul 2>nul
     if %ERRORLEVEL% EQU 0 (
         set NPM_FOUND=1
-        for /f "tokens=*" %%v in ('npm --version 2^>nul') do (
-            echo [OK] npm found, version: %%v
+        REM Use a safer method to get npm version - avoid parsing issues
+        set "NPM_VERSION="
+        for /f "usebackq delims=" %%v in (`npm --version 2^>nul`) do (
+            if not defined NPM_VERSION set "NPM_VERSION=%%v"
+        )
+        if defined NPM_VERSION (
+            echo [OK] npm found, version: !NPM_VERSION!
+        ) else (
+            echo [OK] npm found
         )
     )
 )

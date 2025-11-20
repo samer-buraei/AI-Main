@@ -113,50 +113,123 @@ router.post('/analyze', async (req, res) => {
       ]
     });
 
-    // 4. NEW: SKILL DETECTIVE (The Missing Piece) 🕵️‍♂️
+    // 4. SKILL DETECTIVE: Regex-Based Pattern Matching 🕵️‍♂️
     const recommendations = {
       agents: [],
       mcps: []
     };
 
+    // Combine all file contents and config for pattern matching
     const combinedConfig = scans
       .filter(s => s.success && s.config)
       .map(s => s.config)
       .join('\n');
+    
+    const allFileContents = combinedConfig + ' ' + allFiles.join(' ') + ' ' + goal;
 
-    // -- Detect Database --
+    // Regex Patterns (as provided by user)
+    const PATTERNS = {
+      hardware: [
+        /libusb/i,
+        /pythermalcamera/i,
+        /dronekit/i,
+        /mavlink/i,
+        /ardupilot/i,
+        /rpi\.gpio/i
+      ],
+      data_scientist: [
+        /yolo/i,
+        /ultralytics/i,
+        /pytorch/i,
+        /tensorrt/i,
+        /numpy/i,
+        /pandas/i
+      ],
+      devops: [
+        /mediamtx/i,
+        /gstreamer/i,
+        /docker-compose/i,
+        /prometheus/i,
+        /grafana/i
+      ],
+      sora_compliance: [
+        /bvlos/i,
+        /easa/i,
+        /sora/i,
+        /jarus/i,
+        /risk assessment/i
+      ]
+    };
+
+    // Detect Hardware
+    if (PATTERNS.hardware.some(regex => regex.test(allFileContents))) {
+      const matchedPatterns = PATTERNS.hardware.filter(regex => regex.test(allFileContents));
+      const reasons = matchedPatterns.map(regex => {
+        const match = allFileContents.match(regex);
+        return match ? `Found '${match[0]}'` : '';
+      }).filter(r => r).join(', ');
+      
+      recommendations.agents.push({
+        role: "@hardware",
+        description: "Specialist in MAVLink protocol, hardware interfaces, USB/I2C communication, and real-time constraints.",
+        instructions: "Always check battery failsafes. Use 'dronekit' for Python control logic. For USB thermal cameras, handle NUC (Non-Uniformity Correction) freeze periods. Do not run heavy blocking code on the main thread.",
+        why: reasons ? `Detected hardware interfaces (${reasons}). Essential for drone control.` : "Detected hardware interfaces (MAVLink/GPIO/USB). Essential for drone control."
+      });
+    }
+
+    // Detect Data Scientist
+    if (PATTERNS.data_scientist.some(regex => regex.test(allFileContents))) {
+      const matchedPatterns = PATTERNS.data_scientist.filter(regex => regex.test(allFileContents));
+      const reasons = matchedPatterns.map(regex => {
+        const match = allFileContents.match(regex);
+        return match ? `Found '${match[0]}'` : '';
+      }).filter(r => r).join(', ');
+      
+      recommendations.agents.push({
+        role: "@data_scientist",
+        description: "Specialist in Python data analysis, ML models, and computer vision.",
+        instructions: "Focus on vectorization and efficient data processing. For YOLO models, handle 4-channel input (RGB+Thermal) carefully. Use pandas/numpy conventions.",
+        why: reasons ? `Detected ML/CV libraries (${reasons}). Needs PyTorch/CUDA expertise.` : "Detected YOLO → Needs PyTorch/CUDA expertise"
+      });
+    }
+
+    // Detect DevOps
+    if (PATTERNS.devops.some(regex => regex.test(allFileContents))) {
+      const matchedPatterns = PATTERNS.devops.filter(regex => regex.test(allFileContents));
+      const reasons = matchedPatterns.map(regex => {
+        const match = allFileContents.match(regex);
+        return match ? `Found '${match[0]}'` : '';
+      }).filter(r => r).join(', ');
+      
+      recommendations.mcps.push({
+        name: "Docker MCP",
+        reason: reasons ? `Detected infrastructure tools (${reasons}). Needs Docker/Network expertise.` : "Detected mediamtx → Needs Docker/Network expertise",
+        installCommand: "npx -y @modelcontextprotocol/server-docker"
+      });
+    }
+
+    // Detect SORA Compliance (Special Logic for FireSwarm)
+    if (PATTERNS.sora_compliance.some(regex => regex.test(allFileContents))) {
+      const matchedPatterns = PATTERNS.sora_compliance.filter(regex => regex.test(allFileContents));
+      const reasons = matchedPatterns.map(regex => {
+        const match = allFileContents.match(regex);
+        return match ? `Found '${match[0]}'` : '';
+      }).filter(r => r).join(', ');
+      
+      recommendations.agents.push({
+        role: "@sora_compliance",
+        description: "Specialist in EASA regulations, SORA compliance, and BVLOS operations.",
+        instructions: "Always check flight paths against EASA regulations. Ensure geofence buffers (150m from public roads for Open Category A3). Validate SORA requirements before deployment.",
+        why: reasons ? `Detected BVLOS/Regulatory terms (${reasons}). Required for EU flight authorization.` : "Detected BVLOS/Regulatory terms. Required for EU flight authorization."
+      });
+    }
+
+    // Detect Database (keep existing logic)
     if (allFiles.includes('schema.prisma') || combinedConfig.includes('postgres') || combinedConfig.includes('sqlalchemy')) {
       recommendations.mcps.push({
         name: "PostgreSQL MCP",
         reason: "Database detected. This tool allows the AI to query your live DB to write better SQL.",
         installCommand: "npx -y @modelcontextprotocol/server-postgres"
-      });
-    }
-
-    // -- Detect Hardware/Drones --
-    if (combinedConfig.includes('dronekit') || combinedConfig.includes('mavros') || combinedConfig.includes('ardupilot')) {
-      recommendations.agents.push({
-        role: "@hardware",
-        description: "Specialist in MAVLink protocol, hardware interfaces, and real-time constraints.",
-        instructions: "Always check battery failsafes. Use 'dronekit' for Python control logic. Do not run heavy blocking code on the main thread."
-      });
-    }
-
-    // -- Detect Docker --
-    if (allFiles.includes('Dockerfile') || allFiles.includes('docker-compose.yml')) {
-      recommendations.mcps.push({
-        name: "Docker MCP",
-        reason: "Containerization detected. Allows the AI to spin up/down containers for testing.",
-        installCommand: "npx -y @modelcontextprotocol/server-docker"
-      });
-    }
-    
-    // -- Detect Python Data Science --
-    if (combinedConfig.includes('pandas') || combinedConfig.includes('numpy') || combinedConfig.includes('pytorch')) {
-       recommendations.agents.push({
-        role: "@data_scientist",
-        description: "Specialist in Python data analysis and ML models.",
-        instructions: "Focus on vectorization and efficient data processing. Use pandas/numpy conventions."
       });
     }
 
@@ -397,6 +470,292 @@ router.get('/:sessionId/status', (req, res) => {
     );
   } catch (error) {
     logger.error('Error getting session status', { error: error.message });
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * BOOTSTRAP SPRINT: Create initial tasks for a project
+ * POST /api/orchestrator/bootstrap
+ * 
+ * Input: { projectId: string, sprintType?: string }
+ * Output: { tasks: array, agents: array }
+ */
+router.post('/bootstrap', async (req, res) => {
+  try {
+    const { projectId, sprintType = 'fireswarm_phase0' } = req.body;
+
+    if (!projectId) {
+      return res.status(400).json({ error: 'projectId is required' });
+    }
+
+    const db = getDatabase();
+
+    // Verify project exists
+    db.get('SELECT * FROM projects WHERE id = ?', [projectId], async (err, project) => {
+      if (err) {
+        logger.error('Error fetching project for bootstrap', { error: err.message });
+        return res.status(500).json({ error: 'Failed to fetch project' });
+      }
+
+      if (!project) {
+        return res.status(404).json({ error: 'Project not found' });
+      }
+
+      // Define bootstrap tasks based on sprint type
+      let bootstrapTasks = [];
+      
+      if (sprintType === 'fireswarm_phase0') {
+        bootstrapTasks = [
+          {
+            title: 'Sim_Setup: Dockerize ArduPilot SITL + Gazebo Garden',
+            description: 'Create Docker container for ArduPilot SITL and Gazebo Garden simulation environment. Must support multi-drone instances with unique SYSID_THISMAV. Include thermal sensor plugin configuration.',
+            assigned_to: '@devops',
+            status: 'READY',
+            priority: 'HIGH'
+          },
+          {
+            title: 'Data_Rig: "Stick of Truth" Capture Script',
+            description: 'Build RGB+Thermal synchronized capture script for Raspberry Pi Zero 2 W. Must handle InfiRay P2 Pro NUC freeze periods (~1s every 30s). Output: Paired image files (RGB JPG + Thermal NPY) with timestamps.',
+            assigned_to: '@hardware',
+            status: 'READY',
+            priority: 'HIGH'
+          },
+          {
+            title: 'AI_Baseline: Train YOLOv11n on FLAME-3 Dataset',
+            description: 'Implement 4-channel YOLOv11n (RGB+Thermal) layer surgery. Train on FLAME-3 wildfire dataset. Target: >85% mAP@0.5 for fire detection. Must handle thermal normalization (273K-1273K range).',
+            assigned_to: '@data_scientist',
+            status: 'READY',
+            priority: 'HIGH'
+          }
+        ];
+      } else {
+        // Generic bootstrap (fallback)
+        bootstrapTasks = [
+          {
+            title: 'Initialize Project Structure',
+            description: 'Set up basic project structure and configuration files.',
+            assigned_to: '@devops',
+            status: 'READY',
+            priority: 'MEDIUM'
+          },
+          {
+            title: 'Create Initial Documentation',
+            description: 'Write README and basic project documentation.',
+            assigned_to: '@backend',
+            status: 'READY',
+            priority: 'LOW'
+          }
+        ];
+      }
+
+      // Create tasks in database
+      const createdTasks = [];
+      const { v4: uuidv4 } = require('uuid');
+
+      for (const task of bootstrapTasks) {
+        const taskId = uuidv4();
+        db.run(
+          `INSERT INTO tasks (id, project_id, title, description, status, assigned_to, priority, created_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`,
+          [taskId, projectId, task.title, task.description, task.status, task.assigned_to, task.priority],
+          function(err) {
+            if (err) {
+              logger.error('Error creating bootstrap task', { error: err.message, task: task.title });
+            } else {
+              createdTasks.push({ id: taskId, ...task });
+            }
+          }
+        );
+      }
+
+      // Insert 5 pre-written knowledge docs into knowledge_docs table
+      const knowledgeDocs = [
+        {
+          title: 'Executive Technical Strategy',
+          content_md: `# Strategic Engineering Blueprint: Autonomous Swarm Architecture for Wildfire Detection & Mitigation
+
+## 1. Executive Technical Strategy
+
+The deployment of autonomous Unmanned Aerial Systems (UAS) for wildfire detection represents a convergence of edge computing, distributed sensor networks, and advanced simulation environments.
+
+**Key Technical Pillars:**
+- High-fidelity "Digital Twin" simulation environment
+- Resource-constrained edge perception node
+- Low-latency data transport pipeline
+- Decentralized command and control (C2) logic
+
+**Architectural Philosophy:** Edge-Cloud Hybrid
+- Fast loops (flight stabilization, obstacle avoidance) → Edge
+- Slow loops (swarm coordination, path planning) → Cloud/Mesh`,
+          tags: 'strategy,architecture,overview'
+        },
+        {
+          title: 'Technical Directive: System Orchestration',
+          content_md: `# Technical Directive: Orchestration of Autonomous Multi-Modal Drone Swarm Systems
+
+## Deep Learning Architecture: 4-Channel YOLOv8 Adaptation
+
+The core perception engine requires YOLOv8 adapted for 4-channel input (RGB + Thermal).
+
+**Key Requirements:**
+- Layer surgery to modify input stem from 3 to 4 channels
+- Weight transplantation from COCO pre-trained weights
+- Custom dataloader for radiometric thermal data
+- Training protocol with warm-up epochs
+
+## Simulation Environment
+
+**Gazebo Ignition Configuration:**
+- Thermal sensor plugin with 16-bit resolution
+- Thermal Proxy technique for fire simulation
+- Dynamic environment with programmatic object spawning
+- MAVLink integration for SITL`,
+          tags: 'technical,ai,simulation,yolo'
+        },
+        {
+          title: 'Golden Library: Research Resources',
+          content_md: `# Golden Library: Essential Research Resources
+
+## A. AI & Computer Vision Stack
+
+**YOLO 4-Channel Modification:**
+- Resource: Ultralytics GitHub Issue #16024
+- Contains exact Python snippet for layer surgery
+
+**InfiRay P2 Pro Linux Driver:**
+- Resource: PyThermalCamera (GitHub)
+- Reverse-engineered USB protocol for raw radiometric data
+
+## B. Simulation & Synthetic Data
+
+**Gazebo "Invisible Fire" Fix:**
+- Use geometric shapes with thermal plugin
+- Set temperature attribute in physics engine
+
+## C. Swarm & Communications
+
+**Network Emulation:**
+- Linux tc-netem for jitter/latency simulation
+- Meshtastic Python API for LoRa binary packets
+
+## D. Regulatory (SORA Path)
+
+**JARUS SORA Template:**
+- EASA/JARUS Guidelines
+- ConOps (Concept of Operations) document
+- Open Category A3 (150m geofence buffer)`,
+          tags: 'research,resources,references'
+        },
+        {
+          title: 'Hardware Architecture: Edge Node',
+          content_md: `# Onboard Hardware Architecture: The Edge Node
+
+## Core Processing Unit
+- **Raspberry Pi Zero 2 W**: Quad-core 64-bit ARM Cortex-A53
+- Enables multi-threaded operations (video encoding + flight control)
+
+## Thermal Imaging Integration
+- **InfiRay P2 Pro**: USB UVC device
+- Requires custom driver to bypass standard webcam drivers
+- Extract raw 16-bit YUV data for radiometric analysis
+- Handle NUC (Non-Uniformity Correction) freeze periods (~1s every 30s)
+
+## Power Management
+- **UPS HAT**: Pogo pin architecture (preserves GPIO header)
+- I2C telemetry for battery monitoring
+- Real-Time Clock (RTC) for accurate timestamps
+
+## Mechanical Engineering
+- PETG/ABS casing (not PLA - low glass transition temp)
+- "Saddle" mount design
+- Active cooling via prop wash alignment`,
+          tags: 'hardware,raspberry-pi,thermal,power'
+        },
+        {
+          title: 'Regulatory Compliance: SORA Framework',
+          content_md: `# Regulatory Compliance: SORA Framework
+
+## EASA Open Category A3
+
+**Strategy:** Operate under "Open" Category A3 (Far from people) by enforcing a geofence buffer of 150m from public roads.
+
+**Benefits:**
+- Avoids complex "Specific" category SORA process for MVP
+- Faster approval timeline
+- Suitable for private villa security use case
+
+## Ground Risk Class (GRC)
+- DJI Tello EDU: ~87g
+- Terminal kinetic energy well below 700 Joule threshold
+- Intrinsic Ground Risk: GRC 1 or 2
+
+## Air Risk Class (ARC)
+- Wildfire operations: Restricted/uncontrolled airspace (Class G)
+- Low altitude (<400ft AGL)
+- Classification: ARC-b (Low risk of encounter)
+
+## Operational Safety Objectives (OSOs)
+- **OSO #05**: Safe Design (YOLOv8 modifications)
+- **OSO #06**: C3 Link Performance (Network emulation testing)
+- **OSO #07**: Inspection (Pre-flight checks)`,
+          tags: 'regulatory,sora,easa,compliance'
+        }
+      ];
+
+      // Insert knowledge docs
+      const createdDocs = [];
+      for (const doc of knowledgeDocs) {
+        const docId = uuidv4();
+        db.run(
+          `INSERT INTO knowledge_docs (id, project_id, title, content_md, tags, created_at, updated_at)
+           VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`,
+          [docId, projectId, doc.title, doc.content_md, doc.tags],
+          function(err) {
+            if (err) {
+              logger.error('Error creating knowledge doc', { error: err.message, title: doc.title });
+            } else {
+              createdDocs.push({ id: docId, ...doc });
+            }
+          }
+        );
+      }
+
+      // Get recommended agents from knowledge files
+      const recommendedAgents = [];
+      db.all(
+        `SELECT content FROM knowledge_files WHERE project_id = ? AND file_type = 'AGENTS_CONFIG'`,
+        [projectId],
+        (err, rows) => {
+          if (!err && rows.length > 0) {
+            // Parse agents from AGENTS_CONFIG
+            const content = rows[0].content;
+            const agentMatches = content.match(/## (@\w+)/g);
+            if (agentMatches) {
+              recommendedAgents.push(...agentMatches.map(m => m.replace('## ', '')));
+            }
+          }
+
+          logger.info('Bootstrap sprint created', { 
+            projectId, 
+            taskCount: bootstrapTasks.length,
+            docCount: knowledgeDocs.length,
+            agents: recommendedAgents 
+          });
+
+          res.json({
+            success: true,
+            message: `Bootstrap sprint created: ${bootstrapTasks.length} tasks and ${knowledgeDocs.length} knowledge docs`,
+            tasks: createdTasks,
+            knowledgeDocs: createdDocs,
+            agents: recommendedAgents
+          });
+        }
+      );
+    });
+
+  } catch (error) {
+    logger.error('Error in bootstrap endpoint', { error: error.message, stack: error.stack });
     res.status(500).json({ error: error.message });
   }
 });

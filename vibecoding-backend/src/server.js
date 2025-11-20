@@ -14,6 +14,7 @@ const logger = require('./utils/logger');
 const projectRoutes = require('./routes/projects');
 const taskRoutes = require('./routes/tasks');
 const knowledgeRoutes = require('./routes/knowledge_files');
+const knowledgeDocsRoutes = require('./routes/knowledge_docs');
 const workflowRoutes = require('./routes/workflow');
 const orchestratorRoutes = require('./routes/orchestrator');
 
@@ -41,6 +42,7 @@ app.get('/health', (req, res) => {
 app.use('/api/projects', projectRoutes);
 app.use('/api/tasks', taskRoutes);
 app.use('/api/knowledge', knowledgeRoutes);
+app.use('/api/knowledge-docs', knowledgeDocsRoutes);
 app.use('/api/workflow', workflowRoutes);
 app.use('/api/orchestrator', orchestratorRoutes);
 

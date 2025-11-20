@@ -200,6 +200,59 @@ export const updateKnowledgeFile = async (projectId, fileType, content) => {
 };
 
 // ============================================================================
+// KNOWLEDGE DOCS API (Technical Directives, Research Papers)
+// ============================================================================
+
+export const getKnowledgeDocs = async (projectId) => {
+  try {
+    const response = await retryRequest(() => apiClient.get(`/knowledge-docs/byProject/${projectId}`));
+    return { data: response.data, error: null };
+  } catch (error) {
+    return { data: null, error: handleError(error) };
+  }
+};
+
+export const createKnowledgeDoc = async ({ projectId, title, content_md, tags }) => {
+  try {
+    const response = await retryRequest(() =>
+      apiClient.post('/knowledge-docs', {
+        project_id: projectId,
+        title,
+        content_md,
+        tags,
+      })
+    );
+    return { data: response.data, error: null };
+  } catch (error) {
+    return { data: null, error: handleError(error) };
+  }
+};
+
+export const updateKnowledgeDoc = async (docId, { title, content_md, tags }) => {
+  try {
+    const response = await retryRequest(() =>
+      apiClient.put(`/knowledge-docs/${docId}`, {
+        title,
+        content_md,
+        tags,
+      })
+    );
+    return { data: response.data, error: null };
+  } catch (error) {
+    return { data: null, error: handleError(error) };
+  }
+};
+
+export const deleteKnowledgeDoc = async (docId) => {
+  try {
+    const response = await retryRequest(() => apiClient.delete(`/knowledge-docs/${docId}`));
+    return { data: response.data, error: null };
+  } catch (error) {
+    return { data: null, error: handleError(error) };
+  }
+};
+
+// ============================================================================
 // WORKFLOW API
 // ============================================================================
 
@@ -263,6 +316,20 @@ export const getOrchestrationStatus = async (sessionId) => {
   }
 };
 
+export const bootstrapSprint = async ({ projectId, sprintType }) => {
+  try {
+    const response = await retryRequest(() =>
+      apiClient.post('/orchestrator/bootstrap', {
+        projectId,
+        sprintType,
+      })
+    );
+    return { data: response.data, error: null };
+  } catch (error) {
+    return { data: null, error: handleError(error) };
+  }
+};
+
 // Export default object for convenience
 const api = {
   // Projects
@@ -276,16 +343,22 @@ const api = {
   createTask,
   updateTask,
   deleteTask,
-  // Knowledge
-  getKnowledgeFiles,
-  updateKnowledgeFile,
+        // Knowledge
+        getKnowledgeFiles,
+        updateKnowledgeFile,
+        // Knowledge Docs
+        getKnowledgeDocs,
+        createKnowledgeDoc,
+        updateKnowledgeDoc,
+        deleteKnowledgeDoc,
   // Workflow
   getWorkflow,
   updateWorkflow,
-  // Orchestrator
-  analyzeProject,
-  generatePlan,
-  getOrchestrationStatus,
+        // Orchestrator
+        analyzeProject,
+        generatePlan,
+        getOrchestrationStatus,
+        bootstrapSprint,
 };
 
 export default api;

@@ -8,6 +8,8 @@ import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
 import { useTasks } from '../hooks/useProjects';
 import TaskCard from './TaskCard';
 import { TASK_STATUSES, STATUS_LABELS } from '../utils/constants';
+import * as api from '../services/api';
+import { Rocket } from 'lucide-react';
 
 // Define our columns
 const COLUMNS = {
@@ -18,8 +20,10 @@ const COLUMNS = {
 };
 
 export default function KanbanBoard({ project }) {
-  const { tasks, isLoading, error, updateTask } = useTasks(project?.id);
+  const { tasks, isLoading, error, updateTask, loadTasks } = useTasks(project?.id);
   const [localTasks, setLocalTasks] = useState([]);
+  const [bootstrapLoading, setBootstrapLoading] = useState(false);
+  const [showBootstrapModal, setShowBootstrapModal] = useState(false);
 
   // Sync local tasks with fetched tasks
   useEffect(() => {
@@ -27,6 +31,34 @@ export default function KanbanBoard({ project }) {
       setLocalTasks(tasks);
     }
   }, [tasks]);
+
+  // Handle Bootstrap Sprint
+  const handleBootstrapSprint = async () => {
+    setBootstrapLoading(true);
+    try {
+      const result = await api.bootstrapSprint({
+        projectId: project.id,
+        sprintType: 'fireswarm_phase0'
+      });
+
+      if (result.error) {
+        alert(`Bootstrap failed: ${result.error.error || 'Unknown error'}`);
+        return;
+      }
+
+      // Reload tasks to show the new ones
+      if (loadTasks) {
+        await loadTasks();
+      }
+      
+      setShowBootstrapModal(false);
+      alert(`✅ Bootstrap Sprint created! ${result.data.tasks.length} tasks added.`);
+    } catch (err) {
+      alert(`Bootstrap failed: ${err.message}`);
+    } finally {
+      setBootstrapLoading(false);
+    }
+  };
 
   // Handle drag end
   const onDragEnd = async (result) => {
@@ -79,6 +111,9 @@ export default function KanbanBoard({ project }) {
     );
   }
 
+  // Show Bootstrap Sprint button if no tasks
+  const hasTasks = localTasks.length > 0;
+
   return (
     <div className="h-full">
       <div className="mb-6">
@@ -87,6 +122,34 @@ export default function KanbanBoard({ project }) {
           <p className="text-gray-400">{project.description}</p>
         )}
       </div>
+
+      {/* Bootstrap Sprint Hero Button (when no tasks) */}
+      {!isLoading && !hasTasks && (
+        <div className="mb-8 p-6 bg-gradient-to-r from-purple-900 to-blue-900 rounded-xl border border-purple-700">
+          <div className="flex items-center gap-4">
+            <Rocket className="text-purple-300" size={48} />
+            <div className="flex-1">
+              <h3 className="text-xl font-bold text-white mb-2">🚀 Bootstrap Sprint</h3>
+              <p className="text-gray-300 mb-4">
+                This will create 3 agents and 3 tasks to validate the simulation:
+              </p>
+              <ul className="text-sm text-gray-300 space-y-1 mb-4">
+                <li>✅ Sim_Setup: Dockerize ArduPilot SITL + Gazebo Garden</li>
+                <li>✅ Data_Rig: "Stick of Truth" capture script</li>
+                <li>✅ AI_Baseline: Train YOLOv11n on FLAME-3 dataset</li>
+              </ul>
+              <button
+                onClick={handleBootstrapSprint}
+                disabled={bootstrapLoading}
+                className="bg-purple-600 hover:bg-purple-700 disabled:bg-gray-600 text-white px-6 py-3 rounded-lg font-medium transition-colors flex items-center gap-2"
+              >
+                <Rocket size={18} />
+                {bootstrapLoading ? 'Creating Sprint...' : 'Create Bootstrap Sprint'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <DragDropContext onDragEnd={onDragEnd}>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
