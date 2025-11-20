@@ -298,7 +298,19 @@ router.post('/plan', async (req, res) => {
 
     const db = getDatabase();
 
-    // Get session data
+    // Get session data with explicit debugging
+    logger.info('Looking up session in DB...', { sessionId });
+    
+    db.all('SELECT id, status FROM orchestration_sessions', [], (debugErr, rows) => {
+      if (rows) {
+        logger.info('Current Sessions in DB:', { 
+          count: rows.length, 
+          ids: rows.map(r => r.id),
+          matchFound: rows.some(r => r.id === sessionId)
+        });
+      }
+    });
+
     db.get(
       `SELECT * FROM orchestration_sessions WHERE id = ?`,
       [sessionId],

@@ -159,7 +159,7 @@ function initializeSchema() {
       db.run(
         `CREATE TABLE IF NOT EXISTS orchestration_sessions (
           id TEXT PRIMARY KEY,
-          project_id TEXT NOT NULL,
+          project_id TEXT,
           status TEXT DEFAULT 'pending',
           github_url TEXT,
           repo_metadata TEXT,
