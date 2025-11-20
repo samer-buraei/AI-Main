@@ -10,7 +10,7 @@ import KnowledgeBase from './components/KnowledgeBase';
 import ProjectList from './components/ProjectList';
 import CreateProjectModal from './components/CreateProjectModal';
 import ProjectWizard from './components/ProjectWizard';
-import { Plus, Sparkles, Kanban, BookOpen } from 'lucide-react';
+import { Plus, Sparkles, Kanban, Book } from 'lucide-react';
 import './App.css';
 
 function App() {
@@ -113,7 +113,7 @@ function App() {
                       : 'text-gray-400 hover:text-gray-300'
                   }`}
                 >
-                  <BookOpen size={18} />
+                  <Book size={18} />
                   Knowledge Base
                 </button>
               </div>

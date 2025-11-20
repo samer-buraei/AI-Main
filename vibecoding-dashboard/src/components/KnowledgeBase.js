@@ -4,7 +4,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { FileText, Edit, Eye, Upload, X, Copy, Check, BookOpen, Settings } from 'lucide-react';
+import { FileText, Edit, Eye, Upload, X, Copy, Check, Book, Settings } from 'lucide-react';
 import * as api from '../services/api';
 
 export default function KnowledgeBase({ project }) {
@@ -204,7 +204,7 @@ export default function KnowledgeBase({ project }) {
               : 'text-gray-400 hover:text-gray-300'
           }`}
         >
-          <BookOpen size={18} />
+          <Book size={18} />
           Technical Docs
         </button>
       </div>
@@ -258,7 +258,7 @@ export default function KnowledgeBase({ project }) {
           ) : (
             knowledgeDocs.length === 0 ? (
               <div className="text-center py-8 text-gray-400">
-                <BookOpen size={48} className="mx-auto mb-2 opacity-50" />
+                <Book size={48} className="mx-auto mb-2 opacity-50" />
                 <p className="text-sm">No technical docs yet</p>
                 <p className="text-xs mt-1">Docs will appear after Bootstrap Sprint</p>
               </div>

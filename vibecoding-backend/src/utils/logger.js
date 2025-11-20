@@ -1,71 +1,63 @@
 /**
- * Centralized logging utility
- * Provides structured logging with different log levels
+ * Logger Utility
+ * Centralized logging for the backend
  */
 
-const logLevels = {
-  ERROR: 0,
-  WARN: 1,
-  INFO: 2,
-  DEBUG: 3,
-};
+const fs = require('fs');
+const path = require('path');
 
-const currentLogLevel = process.env.LOG_LEVEL || (process.env.NODE_ENV === 'production' ? 'INFO' : 'DEBUG');
+// Ensure logs directory exists
+const logDir = path.join(__dirname, '../../logs');
+if (!fs.existsSync(logDir)) {
+  fs.mkdirSync(logDir, { recursive: true });
+}
 
-/**
- * Format log message with timestamp
- */
-function formatMessage(level, message, data = null) {
+const errorLogPath = path.join(logDir, 'error.log');
+const combinedLogPath = path.join(logDir, 'combined.log');
+
+function formatMessage(level, message, meta = {}) {
   const timestamp = new Date().toISOString();
-  const logEntry = {
+  return JSON.stringify({
     timestamp,
     level,
     message,
-    ...(data && { data }),
-  };
-  return JSON.stringify(logEntry);
+    ...meta
+  });
 }
 
-/**
- * Log error messages
- */
-function error(message, data = null) {
-  if (logLevels[currentLogLevel] >= logLevels.ERROR) {
-    console.error(formatMessage('ERROR', message, data));
+function writeToFile(filePath, content) {
+  fs.appendFile(filePath, content + '\n', (err) => {
+    if (err) console.error('Failed to write to log file:', err);
+  });
+}
+
+const logger = {
+  info: (message, meta) => {
+    const msg = formatMessage('INFO', message, meta);
+    console.log(msg); // Keep console for dev
+    writeToFile(combinedLogPath, msg);
+  },
+  
+  error: (message, meta) => {
+    const msg = formatMessage('ERROR', message, meta);
+    console.error(msg); // Keep console for dev
+    writeToFile(errorLogPath, msg);
+    writeToFile(combinedLogPath, msg);
+  },
+  
+  warn: (message, meta) => {
+    const msg = formatMessage('WARN', message, meta);
+    console.warn(msg);
+    writeToFile(combinedLogPath, msg);
+  },
+  
+  debug: (message, meta) => {
+    if (process.env.NODE_ENV === 'development') {
+      const msg = formatMessage('DEBUG', message, meta);
+      console.debug(msg);
+      // Optional: Write debug to file? Maybe too noisy.
+    }
   }
-}
-
-/**
- * Log warning messages
- */
-function warn(message, data = null) {
-  if (logLevels[currentLogLevel] >= logLevels.WARN) {
-    console.warn(formatMessage('WARN', message, data));
-  }
-}
-
-/**
- * Log info messages
- */
-function info(message, data = null) {
-  if (logLevels[currentLogLevel] >= logLevels.INFO) {
-    console.log(formatMessage('INFO', message, data));
-  }
-}
-
-/**
- * Log debug messages
- */
-function debug(message, data = null) {
-  if (logLevels[currentLogLevel] >= logLevels.DEBUG) {
-    console.log(formatMessage('DEBUG', message, data));
-  }
-}
-
-module.exports = {
-  error,
-  warn,
-  info,
-  debug,
 };
 
+module.exports = logger;
