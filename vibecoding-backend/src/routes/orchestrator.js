@@ -233,20 +233,28 @@ router.post('/analyze', async (req, res) => {
       });
     }
 
-    // Store session in database
+    // Store session in database (await to ensure it's saved before responding)
     const repoMetadata = JSON.stringify(scans);
-    db.run(
-      `INSERT INTO orchestration_sessions 
-       (id, project_id, status, github_url, repo_metadata) 
-       VALUES (?, ?, ?, ?, ?)`,
-      [sessionId, projectId || null, 'waiting_for_user', repoUrls[0], repoMetadata],
-      (err) => {
-        if (err) {
-          logger.error('Error saving orchestration session', { error: err.message });
-          // Continue anyway - don't fail the request
+    
+    // Wrap db.run in a Promise to await it
+    await new Promise((resolve, reject) => {
+      db.run(
+        `INSERT INTO orchestration_sessions 
+         (id, project_id, status, github_url, repo_metadata) 
+         VALUES (?, ?, ?, ?, ?)`,
+        [sessionId, projectId || null, 'waiting_for_user', repoUrls[0], repoMetadata],
+        (err) => {
+          if (err) {
+            logger.error('Error saving orchestration session', { error: err.message });
+            // Continue anyway - don't fail the request, but log it
+            resolve(); // Still resolve to continue
+          } else {
+            logger.info('Session saved to database', { sessionId });
+            resolve();
+          }
         }
-      }
-    );
+      );
+    });
 
     logger.info('Analysis complete', { sessionId, questionsGenerated: questions.length });
 
@@ -279,6 +287,7 @@ router.post('/analyze', async (req, res) => {
 router.post('/plan', async (req, res) => {
   try {
     const { sessionId, answers } = req.body;
+    logger.info('Plan generation requested', { sessionId }); // Log incoming ID
 
     if (!sessionId) {
       return res.status(400).json({ error: 'sessionId is required' });
@@ -300,6 +309,11 @@ router.post('/plan', async (req, res) => {
         }
 
         if (!session) {
+          logger.warn('Session ID not found in DB', { sessionId }); // Log missing ID
+          // Debug: List all valid IDs to see what's going on
+          db.all('SELECT id FROM orchestration_sessions', [], (err, rows) => {
+             if (rows) logger.debug('Valid Session IDs:', rows.map(r => r.id));
+          });
           return res.status(404).json({ error: 'Session not found' });
         }
 
