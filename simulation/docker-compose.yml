@@ -1,0 +1,24 @@
+# version: '3.8'  # Obsolete in newer Docker Compose versions
+
+services:
+  sitl:
+    build: .
+    container_name: fireswarm_sitl
+    image: fireswarm_sitl:latest
+    stdin_open: true
+    tty: true
+    environment:
+      - DISPLAY=${DISPLAY:-192.168.0.32:0.0}
+      - QT_X11_NO_MITSHM=1
+    volumes:
+      - /tmp/.X11-unix:/tmp/.X11-unix
+      - .:/home/ardupilot/workspace
+    network_mode: host
+    command: >
+      bash -c "chmod +x /home/ardupilot/workspace/start-fast.sh 2>/dev/null || true && /home/ardupilot/workspace/start-fast.sh"
+
+  # Note: Gazebo is run via sim_vehicle.py typically, or separately.
+  # If running separately, we would split them.
+  # For simplicity, 'sim_vehicle.py -f gazebo-iris' attempts to launch Gazebo.
+  # However, inside Docker, launching the GUI requires X11 forwarding.
+
